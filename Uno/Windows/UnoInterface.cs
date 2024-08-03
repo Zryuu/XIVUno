@@ -1,11 +1,11 @@
 ﻿using System;
 using System.Text;
-using Dalamud.Game.Text;
 using Dalamud.Interface.Windowing;
 using Dalamud.Utility.Signatures;
 using FFXIVClientStructs.FFXIV.Client.System.String;
 using FFXIVClientStructs.FFXIV.Client.UI;
 using ImGuiNET;
+using Uno.Helpers;
 
 namespace Uno.Windows;
 
@@ -18,6 +18,7 @@ public unsafe class UnoInterface: Window, IDisposable
     
     private Plugin plugin;
     private int index = 0;
+    private bool bIsTurn = false;
     
     public UnoInterface(Plugin plugin) : base("Uno###001", ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse)
     {
@@ -28,6 +29,7 @@ public unsafe class UnoInterface: Window, IDisposable
     }
     
     //  From: https://github.com/Infiziert90/ChatTwo/blob/main/ChatTwo/GameFunctions/ChatBox.cs
+    //  Converts String message to Bytes, this is the func that actually sends the message.
     public void SendMsgUnsafe(byte[] message)
     {
         if (processChatBox == null)
@@ -37,6 +39,7 @@ public unsafe class UnoInterface: Window, IDisposable
         processChatBox(UIModule.Instance(), mes, IntPtr.Zero, 0);
         mes->Dtor(true);
     }
+    //  Creates String message version. Sends to Sanitise, then sends to SendMsgUnsafe.
     public unsafe void SendMsg(string message)
     {
         var bytes = Encoding.UTF8.GetBytes(message);
@@ -57,6 +60,7 @@ public unsafe class UnoInterface: Window, IDisposable
         
         SendMsgUnsafe(bytes);
     }
+    //  Cleans text and makes sure it only sends characters a player could normally send.
     private string SanitiseText(string text)
     {
         var uText = Utf8String.FromString(text);
@@ -68,11 +72,20 @@ public unsafe class UnoInterface: Window, IDisposable
         return sanitised;
     }
     
-
     public void Dispose() { }
 
+    private void DrawTabs()
+    {
+        
+    }
+    
+    
     public override void Draw()
     {
+        
+        
+        
+        
         if (ImGui.Button("test"))
         {
                 
@@ -85,6 +98,5 @@ public unsafe class UnoInterface: Window, IDisposable
             index = 0;
         }
     }
-    
 }
 

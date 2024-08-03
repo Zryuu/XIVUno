@@ -2,7 +2,7 @@
 using Dalamud.Plugin;
 using Dalamud.Plugin.Services;
 
-namespace Uno;
+namespace Uno.Helpers;
 
 #pragma warning disable CS8618
 public class Services {
