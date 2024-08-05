@@ -1,13 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
-using Dalamud.Game.Command;
 using Dalamud.IoC;
 using Dalamud.Plugin;
 using Dalamud.Game.ClientState.Objects.SubKinds;
 using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Interface.Windowing;
-using Dalamud.Plugin.Services;
 using Dalamud.Utility.Signatures;
 using FFXIVClientStructs.FFXIV.Client.Game.Group;
 using FFXIVClientStructs.FFXIV.Client.System.String;
@@ -185,7 +183,7 @@ public unsafe class Plugin : IDalamudPlugin
     //  EG. "++Settings;10;true;true;true;true"
     public void RouteReceivedMessage(string message, SeString sender)
     {
-        if (message.Length < 2 || sender.ToString() == LocPlayerName)
+        if (message.Length < 2 || sender == LocPlayer!.Name)
         {
             return;
         }

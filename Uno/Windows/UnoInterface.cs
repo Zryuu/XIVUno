@@ -75,6 +75,7 @@ public unsafe class UnoInterface: Window, IDisposable
     {
         if (!bIsTurn)
         {
+            Services.Chat.PrintError("[UNO]: Please wait until its your turn before choosing a card...");
             return;
         }
         
@@ -104,6 +105,9 @@ public unsafe class UnoInterface: Window, IDisposable
                 }
             }
         }
+        
+        SendTurn(passedCard);
+        
     }
 
     public void DrawCard()
@@ -397,6 +401,8 @@ public unsafe class UnoInterface: Window, IDisposable
         {
             return;
         }
+
+        partynumHeldCardsCards = new int[plugin.PartyMembers.Length];
         
         const MessageType messageType = MessageType.StartGame;
         var random = new Random();
@@ -416,6 +422,11 @@ public unsafe class UnoInterface: Window, IDisposable
     
     public void ReceiveStartGame(string message)
     {
+        if (bLiveGame)
+        {
+            return;
+        }
+        
         var parts = message.Split(";");
 
         bLiveGame = true;
@@ -596,6 +607,15 @@ public unsafe class UnoInterface: Window, IDisposable
             }
         }
 
+        if (bLiveGame)
+        {
+            ImGui.SetCursorPosX(ImGui.GetWindowWidth() / 2);
+            ImGui.Text($"Seed: {gameSeed}");
+        }
+
+        ImGui.PushStyleColor(ImGuiCol.Button, new Vector4(1, 1, 0, 1));
+        ImGui.Button("test", new Vector2(100, 100));
+        ImGui.PopStyleColor();
         
         //  Create cards
         for (var i = 0; i < locPlayerCards.Count; i++)
@@ -603,23 +623,18 @@ public unsafe class UnoInterface: Window, IDisposable
             var c = locPlayerCards[i];
             
             ImGui.SetCursorPos(new Vector2((ImGui.GetWindowWidth() / 4) + (i * 100), ImGui.GetWindowHeight() - 150));
-            ImGui.Text(c.CardInfo.Number.ToString());
-            
-            ImGui.SetCursorPos(new Vector2((ImGui.GetWindowWidth() / 4) + (i * 100), ImGui.GetWindowHeight() - 150));
             ImGui.PushID(i);
             if (ImGui.ColorButton($"{c.CardInfo.Number}", c.GetCardColor(), ImGuiColorEditFlags.None, new Vector2(100, 100)))
             {
                 if (bIsTurn)
                 {
-                    SendTurn(c);
+                    HandleTurnLocal(c);
                     locPlayerCards.Remove(c);
                 }
-
-                if (!bIsTurn)
-                {
-                    Services.Log.Information("Not your turn");
-                }
             }
+            
+            ImGui.SetCursorPos(new Vector2((ImGui.GetWindowWidth() / 4), ImGui.GetWindowHeight()));
+            ImGui.Text(c.CardInfo.Number.ToString());
         }
 
         if (ImGui.Button("DRAW"))
