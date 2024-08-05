@@ -9,5 +9,10 @@
     <PackageLicenseExpression>AGPL-3.0-or-later</PackageLicenseExpression>
     <IsPackable>false</IsPackable>
     <RootNamespace>Uno</RootNamespace>
+    <LangVersion>preview</LangVersion>
   </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\..\Tools\OtterGui\OtterGui.csproj" />
+    </ItemGroup>
 </Project>

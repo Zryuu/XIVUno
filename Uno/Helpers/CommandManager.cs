@@ -6,7 +6,7 @@ namespace Uno.Helpers;
 public class CommandManager
 {
     private readonly Dictionary<string, CommandInfo> commands = new();
-    public const string UnoCommand = "/UNO";
+    public const string UnoCommand = "/uno";
     private Plugin plugin;
     
     public CommandManager(Plugin plugin)

@@ -10,8 +10,6 @@ namespace Uno.Helpers;
 public class Delegates
 {
     private Plugin plugin;
-    private List<string> capturedMessages = new List<string>();
-    public SeString[]? partyMembers;
     
     //  Constructor
     public Delegates(Plugin plugin)
@@ -29,8 +27,8 @@ public class Delegates
     //  Calls every Plugin Tick.
     public void OnFrameworkTick(IFramework framework)
     {
-        
         plugin.SetPartyMembers();
+        plugin.HandleDeltaTime();
     }
     
     //  Fires on Login
@@ -57,12 +55,17 @@ public class Delegates
             return;
         }
         
-        foreach (var p in partyMembers)
+        foreach (var p in plugin.PartyMembers!)
         {
             if (sender.ToString().Substring(1) == p!.ToString())
             {
-                string capturedMessage = cmessage.TextValue;
-                Services.Log.Information($"{type}, {senderId}, {sender}, '{cmessage}', {isHandled}");
+                var capturedMessage = cmessage.TextValue;
+
+                if (capturedMessage[0] == '+' && capturedMessage[1] == '+')
+                { 
+                    capturedMessage = capturedMessage.Substring(2);
+                    plugin.RouteReceivedMessage(capturedMessage, sender);
+                }
                 break;
             }
         }
