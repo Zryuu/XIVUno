@@ -43,7 +43,7 @@ public unsafe class Plugin : IDalamudPlugin
     
     private List<string> capturedMessages = new List<string>();
     public SeString[]? PartyMembers;
-    public bool isLeader;
+    public bool bIsLeader, bDebug = false;
     public long? currentPartyId;
     public MessageType MessageType;
     
@@ -140,7 +140,7 @@ public unsafe class Plugin : IDalamudPlugin
         }
         
         
-        isLeader = GM->MainGroup.IsEntityIdPartyLeader(Services.ClientState.LocalPlayer!.EntityId);
+        bIsLeader = GM->MainGroup.IsEntityIdPartyLeader(Services.ClientState.LocalPlayer!.EntityId);
         
         //  Checks if PartyID has changed.
         if (currentPartyId == null || Services.Party.PartyId != currentPartyId)
