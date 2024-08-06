@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Net.Sockets;
 using System.Text;
 using Dalamud.IoC;
 using Dalamud.Plugin;
@@ -7,6 +8,7 @@ using Dalamud.Game.ClientState.Objects.SubKinds;
 using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Interface.Windowing;
 using Dalamud.Utility.Signatures;
+using DotNetEnv;
 using FFXIVClientStructs.FFXIV.Client.Game.Group;
 using FFXIVClientStructs.FFXIV.Client.System.String;
 using FFXIVClientStructs.FFXIV.Client.UI;
@@ -44,6 +46,7 @@ public unsafe class Plugin : IDalamudPlugin
     public bool bIsLeader, bDebug = false;
     public long? currentPartyId;
     public MessageType MessageType;
+    public TcpClient client;
     
     public float DeltaTime = 0;
     
@@ -60,6 +63,10 @@ public unsafe class Plugin : IDalamudPlugin
         Delegates     = new Delegates(this);
         Cm            = new CommandManager(this);
         GM            = GroupManager.Instance();
+
+        Env.Load();
+
+        string IP = Environment.GetEnvironmentVariable("SERVER_IP")!;
         
         Configuration = Services.PluginInterface.GetPluginConfig() as Configuration ?? new Configuration();
         
@@ -79,6 +86,8 @@ public unsafe class Plugin : IDalamudPlugin
 
         // Adds another button that is doing the same but for the main ui of the plugin
         Services.PluginInterface.UiBuilder.OpenMainUi += ToggleMainUI;
+        
+        client = new TcpClient(IP, 8080);
         
     }
 

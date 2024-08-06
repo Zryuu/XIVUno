@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Sockets;
 using System.Numerics;
 using System.Security.Cryptography;
+using System.Text;
 using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Interface.Windowing;
 using ImGuiNET;
@@ -44,6 +46,9 @@ public unsafe class UnoInterface: Window, IDisposable
     private long gameSeed;
     private string[] MemberOrder;
     private bool[] MemberTurn;
+    public NetworkStream stream;
+    public byte[] buffer;
+    public int bytesRead;
     
     public UnoSettings UnoSettings;
     
@@ -54,6 +59,9 @@ public unsafe class UnoInterface: Window, IDisposable
         UnoSettings = new UnoSettings();
         card = new UnoCard();
         locPlayerCards = new List<UnoCard>();
+        
+        stream = plugin.client.GetStream();
+        buffer = new byte[1024];
         
         Services.GameInteropProvider.InitializeFromAttributes(this);
         
@@ -971,10 +979,20 @@ public unsafe class UnoInterface: Window, IDisposable
     
     public override void Draw()
     {
+        bytesRead = stream.Read(buffer, 0, buffer.Length);
+        ImGui.Text(bytesRead.ToString());
         
-        DrawTabs();
+        //DrawTabs();
         
-        SyncSettingsCoolDown();
+        //SyncSettingsCoolDown();
+
+        if (ImGui.Button("Ping", new Vector2(100, 100)))
+        {
+            string msg = "ping";
+            byte[] message = Encoding.ASCII.GetBytes(msg);
+            stream.Write(message, 0, message.Length);
+            
+        }
         
     }
 }

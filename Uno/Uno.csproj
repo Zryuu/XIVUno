@@ -15,4 +15,8 @@
     <ItemGroup>
         <ProjectReference Include="..\..\Tools\OtterGui\OtterGui.csproj" />
     </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Include="DotNetEnv" Version="3.1.0" />
+    </ItemGroup>
 </Project>
