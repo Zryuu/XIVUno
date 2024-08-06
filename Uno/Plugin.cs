@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Net.Sockets;
 using System.Runtime.CompilerServices;
@@ -67,8 +67,7 @@ public unsafe class Plugin : IDalamudPlugin
         Delegates     = new Delegates(this);
         Cm            = new CommandManager(this);
         GM            = GroupManager.Instance();
-        
-        Env.Load();
+
 
         string IP = Environment.GetEnvironmentVariable("IP");
         
@@ -91,7 +90,7 @@ public unsafe class Plugin : IDalamudPlugin
         // Adds another button that is doing the same but for the main ui of the plugin
         Services.PluginInterface.UiBuilder.OpenMainUi += ToggleMainUI;
         
-        client = new TcpClient(IP, 6347);
+        client = new TcpClient("34.174.34.114", 6347);
         stream = client.GetStream();
         buffer = new byte[1024];
         

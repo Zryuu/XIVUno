@@ -976,8 +976,8 @@ public unsafe class UnoInterface: Window, IDisposable
     
     public override void Draw()
     {
-        plugin.bytesRead = plugin.stream.Read(plugin.buffer, 0, plugin.buffer.Length);
-        ImGui.Text(plugin.bytesRead.ToString());
+        //plugin.bytesRead = plugin.stream.Read(plugin.buffer, 0, plugin.buffer.Length);
+        //ImGui.Text(plugin.bytesRead.ToString());
         
         //DrawTabs();
         
