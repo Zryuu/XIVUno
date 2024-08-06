@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Net.Sockets;
+using System.Runtime.CompilerServices;
 using System.Text;
 using Dalamud.IoC;
 using Dalamud.Plugin;
@@ -47,6 +48,9 @@ public unsafe class Plugin : IDalamudPlugin
     public long? currentPartyId;
     public MessageType MessageType;
     public TcpClient client;
+    public NetworkStream stream;
+    public byte[] buffer;
+    public int bytesRead;
     
     public float DeltaTime = 0;
     
@@ -63,10 +67,10 @@ public unsafe class Plugin : IDalamudPlugin
         Delegates     = new Delegates(this);
         Cm            = new CommandManager(this);
         GM            = GroupManager.Instance();
-
+        
         Env.Load();
 
-        string IP = Environment.GetEnvironmentVariable("SERVER_IP")!;
+        string IP = Environment.GetEnvironmentVariable("IP");
         
         Configuration = Services.PluginInterface.GetPluginConfig() as Configuration ?? new Configuration();
         
@@ -87,7 +91,9 @@ public unsafe class Plugin : IDalamudPlugin
         // Adds another button that is doing the same but for the main ui of the plugin
         Services.PluginInterface.UiBuilder.OpenMainUi += ToggleMainUI;
         
-        client = new TcpClient(IP, 8080);
+        client = new TcpClient(IP, 6347);
+        stream = client.GetStream();
+        buffer = new byte[1024];
         
     }
 

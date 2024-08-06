@@ -46,9 +46,7 @@ public unsafe class UnoInterface: Window, IDisposable
     private long gameSeed;
     private string[] MemberOrder;
     private bool[] MemberTurn;
-    public NetworkStream stream;
-    public byte[] buffer;
-    public int bytesRead;
+
     
     public UnoSettings UnoSettings;
     
@@ -60,8 +58,7 @@ public unsafe class UnoInterface: Window, IDisposable
         card = new UnoCard();
         locPlayerCards = new List<UnoCard>();
         
-        stream = plugin.client.GetStream();
-        buffer = new byte[1024];
+
         
         Services.GameInteropProvider.InitializeFromAttributes(this);
         
@@ -979,18 +976,18 @@ public unsafe class UnoInterface: Window, IDisposable
     
     public override void Draw()
     {
-        bytesRead = stream.Read(buffer, 0, buffer.Length);
-        ImGui.Text(bytesRead.ToString());
+        plugin.bytesRead = plugin.stream.Read(plugin.buffer, 0, plugin.buffer.Length);
+        ImGui.Text(plugin.bytesRead.ToString());
         
         //DrawTabs();
         
         //SyncSettingsCoolDown();
 
-        if (ImGui.Button("Ping", new Vector2(100, 100)))
+        if (ImGui.Button("Connect", new Vector2(100, 100)))
         {
-            string msg = "ping";
+            string msg = plugin.LocPlayerName;
             byte[] message = Encoding.ASCII.GetBytes(msg);
-            stream.Write(message, 0, message.Length);
+            plugin.stream.Write(message, 0, message.Length);
             
         }
         
