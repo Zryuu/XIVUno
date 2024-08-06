@@ -11,6 +11,7 @@ public struct CardInfo
     public CardColor CardColor;
     public CardType CardType;
     public int Number;
+    public string Name;
     public int Weight;
 };
 
@@ -19,7 +20,8 @@ public enum CardColor
     Blue,
     Red,
     Yellow,
-    Green
+    Green,
+    White
 }
 
 public enum CardType
@@ -39,19 +41,19 @@ public class UnoCard
     public int Number = 50, Swap = 20, Block = 10, PlusTwo = 10, PlusFour = 5, WildCard = 5;
     public Vector4 Color = new Vector4(0, 0, 0, 0);
 
-    public Dictionary<CardType, int> weight = new Dictionary<CardType, int>
+    public Dictionary<CardType, int> Weight = new Dictionary<CardType, int>
     {
-        { CardType.Number, 50},
-        { CardType.Swap, 20},
-        { CardType.Block, 10},
-        { CardType.PlusTwo, 10},
-        { CardType.PlusFour, 5},
         { CardType.WildCard, 5},
+        { CardType.PlusFour, 5},
+        { CardType.PlusTwo, 10},
+        { CardType.Block, 10},
+        { CardType.Swap, 20},
+        { CardType.Number, 50}
     };
 
-    public void SetCardColor()
+    public void SetCardColor(CardColor color)
     {
-        switch (CardInfo.CardColor)
+        switch (color)
         {
             case CardColor.Blue:
                 Color = new Vector4(0, 0, 1, 1);
@@ -86,6 +88,9 @@ public class UnoCard
             case CardColor.Yellow:
                 vec = new Vector4(1, 1, 0, 1);
                 break;
+            case CardColor.White:
+                vec = new Vector4(1, 1, 1, 1);
+                break;
         }
         
         return vec;
@@ -94,9 +99,9 @@ public class UnoCard
     public void SetCardsWeight(CardType type, int newWeight)
     {
         int val;
-        if (weight.TryGetValue(type, out val))
+        if (Weight.TryGetValue(type, out val))
         {
-            weight[type] = newWeight;
+            Weight[type] = newWeight;
         }
         else
         {
@@ -112,12 +117,14 @@ public class UnoCard
         return card.CardInfo;
     }
 
-    public void SetCardInfoElements(CardColor color, CardType type, int num)
+    public void SetCardInfoElements(CardColor color, CardType type, int num, string name)
     {
-        CardInfo.CardColor = color;
+
+        CardInfo.CardColor = type == CardType.WildCard ? CardColor.White : color;
         CardInfo.CardType = type;
         CardInfo.Number = num;
-        CardInfo.Weight = weight[type];
+        CardInfo.Name = name;
+        CardInfo.Weight = Weight[type];
     }
     
 }

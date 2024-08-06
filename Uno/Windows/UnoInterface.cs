@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Numerics;
 using System.Security.Cryptography;
 using Dalamud.Game.Text.SeStringHandling;
@@ -33,14 +34,16 @@ public struct UnoSettings
 public unsafe class UnoInterface: Window, IDisposable
 {
     private Plugin plugin;
-    private bool bIsTurn = false, bLiveGame = false, bSetDefaultWeights = false, bCanSyncSettings = true;
+    private bool bIsTurn = false, bLiveGame = false, bSetDefaultWeights = false, bCanSyncSettings = true, bReverse = false;
     private UnoCard card, currentPlayedCard;
     private List<UnoCard> locPlayerCards;
-    private int numHeldCards;
+    private int numHeldCards, orderIndex;
     private int[] partynumHeldCardsCards;
     public int Number = 50, Swap = 20, Block = 10, PlusTwo = 10, PlusFour = 5, WildCard = 5;
     private float elapsedTime = 0, SyncSettingsCD = 5;
     private long gameSeed;
+    private string[] MemberOrder;
+    private bool[] MemberTurn;
     
     public UnoSettings UnoSettings;
     
@@ -167,6 +170,35 @@ public unsafe class UnoInterface: Window, IDisposable
             }
         }
     }
+
+    //  Gets Party Order
+    private string GetCurrentPartyOrder(SeString[]? members)
+    {
+
+        if (members == null)
+        {
+            Services.Chat.PrintError("[UNO]: Couldn't get Party Members. Please check log..");
+            Services.Log.Information("[ERROR]: UNO::UnoInterface::GetCurrentPartyOrder:: " +
+                                     "SeString parameter is null.");
+        }
+        
+        var returnString = "";
+        
+        foreach (var member in members!)
+        {
+
+            if (member == members.Last())
+            {
+                returnString += member.ToString();
+            }
+            else
+            {
+                returnString += member + ";";
+            }
+
+        }
+        return returnString;
+    }
     
     //  Returns Weights to default.
     private void SetCardSettingsWithDefaultWeights()
@@ -285,7 +317,7 @@ public unsafe class UnoInterface: Window, IDisposable
         var ranType = CardType.Number;
         var ran = random.Next(CalculateTotalWeight());
 
-        foreach (var type in card.weight)
+        foreach (var type in card.Weight)
         {
             if (ran < type.Value)
             {
@@ -295,8 +327,22 @@ public unsafe class UnoInterface: Window, IDisposable
 
             ranType = CardType.Number;
         }
+
+        var ranName = "";
+
+        if (ranType != CardType.Number)
+        {
+            ranName = ranType.ToString();
+        }
+        else
+        {
+            ranName = ranNum.ToString();
+        }
         
-        passedCard.SetCardInfoElements((CardColor)ranColor, ranType, ranNum);
+        Services.Log.Information(ranName);
+        Services.Log.Information(ranType.ToString());
+        
+        passedCard.SetCardInfoElements((CardColor)ranColor, ranType, ranNum, ranName);
         
     }
 
@@ -349,14 +395,13 @@ public unsafe class UnoInterface: Window, IDisposable
         bCanSyncSettings = false;
     }
 
-    public void ReceiveSettings(string message)
+    public void ReceiveSettings(string[] parts)
     {
         if (bLiveGame || (!plugin.bIsLeader && plugin.PartyMembers!.Length > 1))
         {
             return;
         }
-
-        var parts = message.Split(";");
+        
         UnoSettings newSettings;
 
         newSettings.StartingHand        = int.Parse(parts[1]);
@@ -402,45 +447,73 @@ public unsafe class UnoInterface: Window, IDisposable
             return;
         }
 
-        partynumHeldCardsCards = new int[plugin.PartyMembers.Length];
+        partynumHeldCardsCards = new int[plugin.PartyMembers!.Length];
         
         const MessageType messageType = MessageType.StartGame;
         var random = new Random();
         var seed = random.NextInt64(0101,60545);
 
+        bIsTurn = true;
         gameSeed = seed;
 
         if (!plugin.bDebug)
         {
-            plugin.SendMsg($"++{messageType};{gameSeed}");
+            plugin.SendMsg($"++{messageType};{gameSeed};{GetCurrentPartyOrder(plugin.PartyMembers)}");
+            
         }
 
         InitHeldCards();
-
-        bIsTurn = true;
     }
     
-    public void ReceiveStartGame(string message)
+    public void ReceiveStartGame(string[] parts)
     {
-        if (bLiveGame)
+
+        if (parts[0] != "StartGame" || bLiveGame)
         {
+            Services.Log.Information("Receive didnt start because bLiveGame is live");
             return;
         }
         
-        var parts = message.Split(";");
-
+        if (bLiveGame)
+        {
+            Services.Chat.PrintError("[UNO]: Someone tried to start a new game while a game is live...");
+            Services.Log.Information($"UNO::UnoInterface::ReceiveStartGame:: " +
+                                     $"live game is set to {bLiveGame}.");
+            return;
+        }
+        
         bLiveGame = true;
         gameSeed = long.Parse(parts[1]);
+
+        //  Getting party member order
+        MemberOrder = new string[plugin.PartyMembers!.Length];
+        orderIndex = 0;
+        for (var i = 2; i < parts.Length; i++)
+        {
+
+            if (MemberOrder[i] == plugin.LocPlayerName)
+            {
+                orderIndex = i;
+            }
+            
+            MemberOrder[i] = parts[i];
+        }
         
         InitHeldCards();
+        
     }
-
     
     //  END GAME
     private void SendEndGame(bool forceStop)
     {
         if (!plugin.bIsLeader)
         {
+            if (plugin.PartyMembers!.Length < 1)
+            {
+                EndGame();
+                return;
+            }
+            
             Services.Chat.Print("[UNO]: Only the party's leader can end the game.");
             return;
         }
@@ -452,13 +525,23 @@ public unsafe class UnoInterface: Window, IDisposable
             plugin.SendMsg($"++{messageType};{gameSeed};{forceStop}");
         }
 
+        //  Clears MemberOrder.
+        for (var i = 0; i < MemberOrder.Length; i++)
+        {
+            MemberOrder[i] = "";
+        }
+        
         EndGame();
     }
 
-    public void ReceiveEndGame(string message)
+    public void ReceiveEndGame(string[] parts)
     {
-        var parts = message.Split(";");
 
+        if (parts[0] != "EndGame" || !bLiveGame)
+        {
+            return;
+        }
+        
         if (gameSeed == long.Parse(parts[1]))
         {
             gameSeed = 0;
@@ -477,22 +560,33 @@ public unsafe class UnoInterface: Window, IDisposable
     private void SendTurn(UnoCard sentCard)
     {
         const MessageType messageType = MessageType.Turn;
-
+        
+        var offset = 0;
+        
+        if (bReverse)
+        {
+            offset = -1;
+        }
+        else
+        {
+            offset = 1;
+        }
+        
         if (!plugin.bDebug)
         {
             plugin.SendMsg($"++{messageType};" +
                            $"{numHeldCards};" +
                            $"{sentCard.CardInfo.CardType};" +
                            $"{sentCard.CardInfo.CardColor};" +
-                           $"{sentCard.CardInfo.Number}");
+                           $"{sentCard.CardInfo.Number}" +
+                           $"{MemberOrder[orderIndex+offset]}");
         }
 
         bIsTurn = false;
     }
 
-    public void ReceiveTurn(string message, SeString sender)
+    public void ReceiveTurn(string[] parts, SeString sender)
     {
-        var parts = message.Split(";");
         var checker = 0;
         
         if (parts[0] != "Turn" || bIsTurn)
@@ -517,6 +611,12 @@ public unsafe class UnoInterface: Window, IDisposable
         currentPlayedCard.CardInfo.CardType = (CardType)int.Parse(parts[2]);
         currentPlayedCard.CardInfo.CardColor = (CardColor)int.Parse(parts[3]);
         currentPlayedCard.CardInfo.Number = int.Parse(parts[4]);
+
+        // This is to keep up with whose turn it is....I need to make a list that holds each party member
+        //MemberTurn[parts[5]] = true;
+        
+        //  This handles if a PLusTwo or PLusFour was put by someone else
+        //if ()
     }
 
     //  This func is called to update the others players showing a new card was pulled.
@@ -530,9 +630,8 @@ public unsafe class UnoInterface: Window, IDisposable
         }
     }
     
-    public void ReceiveDrawCard(string message,  SeString sender)
+    public void ReceiveDrawCard(string[] parts,  SeString sender)
     {
-        var parts = message.Split(";");
         var checker = 0;
 
         if (parts[0] != "Draw")
@@ -599,23 +698,22 @@ public unsafe class UnoInterface: Window, IDisposable
     //  This func will handle Drawing the actual game.
     private void DrawUnoTab()
     {
-        if (plugin.bIsLeader)
+        if (ImGui.Button("End Game"))
         {
-            if (ImGui.Button("End Game"))
+            if (!plugin.bIsLeader || !bLiveGame)
             {
-                SendEndGame(true);
+                return;
             }
+            
+            SendEndGame(true);
         }
+        
 
         if (bLiveGame)
         {
             ImGui.SetCursorPosX(ImGui.GetWindowWidth() / 2);
             ImGui.Text($"Seed: {gameSeed}");
         }
-
-        ImGui.PushStyleColor(ImGuiCol.Button, new Vector4(1, 1, 0, 1));
-        ImGui.Button("test", new Vector2(100, 100));
-        ImGui.PopStyleColor();
         
         //  Create cards
         for (var i = 0; i < locPlayerCards.Count; i++)
@@ -624,10 +722,44 @@ public unsafe class UnoInterface: Window, IDisposable
             
             ImGui.SetCursorPos(new Vector2((ImGui.GetWindowWidth() / 4) + (i * 100), ImGui.GetWindowHeight() - 150));
             ImGui.PushID(i);
-            if (ImGui.ColorButton($"{c.CardInfo.Number}", c.GetCardColor(), ImGuiColorEditFlags.None, new Vector2(100, 100)))
+            if (ImGui.ColorButton($"{c.CardInfo.Name}", c.GetCardColor(), ImGuiColorEditFlags.None, new Vector2(100, 100)))
             {
                 if (bIsTurn)
                 {
+                    if (c.CardInfo.CardType == CardType.WildCard)
+                    { 
+                        ImGui.SetCursorPosY(ImGui.GetWindowHeight() / 2);
+                        ImGui.PushID("Wild###");
+                        if (ImGui.ColorButton($"Blue", new Vector4(0,0,1,1), ImGuiColorEditFlags.None,
+                                            new Vector2(100, 100)))
+                        {
+                            c.SetCardColor(CardColor.Blue);
+                        }
+                        ImGui.SameLine();
+                        ImGui.PushID("Wild###");
+                        if (ImGui.ColorButton($"Green", new Vector4(0,1,0,1), ImGuiColorEditFlags.None,
+                                              new Vector2(100, 100)))
+                        {
+                            c.SetCardColor(CardColor.Green);
+                        }
+                        ImGui.SameLine();
+                        ImGui.PushID("Wild###");
+                        if (ImGui.ColorButton($"Red", new Vector4(1,0,0,1), ImGuiColorEditFlags.None,
+                                              new Vector2(100, 100)))
+                        {
+                            c.SetCardColor(CardColor.Red);
+                        }
+                        ImGui.SameLine();
+                        ImGui.PushID("Wild###");
+                        if (ImGui.ColorButton($"Yellow", new Vector4(1,1,0,1), ImGuiColorEditFlags.None,
+                                              new Vector2(100, 100)))
+                        {
+                            c.SetCardColor(CardColor.Yellow);
+                        }
+
+                    }
+                    
+                    
                     HandleTurnLocal(c);
                     locPlayerCards.Remove(c);
                 }

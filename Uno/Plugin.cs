@@ -136,9 +136,11 @@ public unsafe class Plugin : IDalamudPlugin
             PartyMembers[i] = GetPartyMemberNames(i)!;
             
         }
-        
-        
-        bIsLeader = GM->MainGroup.IsEntityIdPartyLeader(Services.ClientState.LocalPlayer!.EntityId);
+
+        if (GM->MainGroup.PartyMembers.Length > 1)
+        {
+            bIsLeader = GM->MainGroup.IsEntityIdPartyLeader(Services.ClientState.LocalPlayer!.EntityId);
+        }
         
         //  Checks if PartyID has changed.
         if (currentPartyId == null || Services.Party.PartyId != currentPartyId)
@@ -183,7 +185,7 @@ public unsafe class Plugin : IDalamudPlugin
     //  EG. "++Settings;10;true;true;true;true"
     public void RouteReceivedMessage(string message, SeString sender)
     {
-        if (message.Length < 2 || sender == LocPlayer!.Name)
+        if (message.Length < 2 || sender == Services.ClientState.LocalPlayer!.Name)
         {
             return;
         }
@@ -195,23 +197,23 @@ public unsafe class Plugin : IDalamudPlugin
         {
             //  Settings
             case "Settings":
-                UnoInterface.ReceiveSettings(message);
+                UnoInterface.ReceiveSettings(parts);
                 break;
             //  StartGame
             case "StartGame":
-                UnoInterface.ReceiveStartGame(message);
+                UnoInterface.ReceiveStartGame(parts);
                 break;
             //  EndGame
             case "EndGame":
-                UnoInterface.ReceiveEndGame(message);
+                UnoInterface.ReceiveEndGame(parts);
                 break;
             //  Turn
             case "Turn":
-                UnoInterface.ReceiveTurn(message, sender);
+                UnoInterface.ReceiveTurn(parts, sender);
                 break;
             //  Draw
             case "Draw":
-                UnoInterface.ReceiveDrawCard(message, sender);
+                UnoInterface.ReceiveDrawCard(parts, sender);
                 break;
         }
     }
