@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "Uno": {
+      "commandName": "Project",
+      "environmentVariables": {
+        "IP": "34.174.34.114"
+      }
+    }
+  }
+}
