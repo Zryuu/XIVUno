@@ -149,56 +149,6 @@ public unsafe class Plugin : IDalamudPlugin
         LocPlayerName = GM->MainGroup.GetPartyMemberByEntityId(Services.ClientState.LocalPlayer!.EntityId)->NameString;
     }
     
-    //  Gets Party Member's names and saves them in an array
-    public void SetPartyMembers()
-    {
-
-        if (Services.Party.Length < 1)
-        {
-            return;
-        }
-        
-        //  This may cause some memory issues......maybe.
-        PartyMembers = new SeString[Services.Party.Length];
-
-        for (var i = 0; i < Services.Party.Length; i++)
-        {
-            PartyMembers[i] = GetPartyMemberNames(i)!;
-            
-        }
-
-        if (GM->MainGroup.PartyMembers.Length > 1)
-        {
-            bIsLeader = GM->MainGroup.IsEntityIdPartyLeader(Services.ClientState.LocalPlayer!.EntityId);
-        }
-        
-        //  Checks if PartyID has changed.
-        if (currentPartyId == null || Services.Party.PartyId != currentPartyId)
-        {
-            currentPartyId = Services.Party.PartyId;
-            
-            //  Saves Loc player
-            SaveLocPlayer();
-        }
-    }
-    
-    //  Gets part Member's names from array.
-    public string? GetPartyMemberNames(int i)
-    {
-        //  Checks if Party Member count is less than 1, if so then no party.
-        if (Services.Party.Length < 1)
-        {
-            Services.Log.Information("[ERROR]: Uno::Plugin.cs::GetPartyMemberNames ran with no active party.");
-            return null;
-        }
-        
-        var member = Services.Party.CreatePartyMemberReference(Services.Party.GetPartyMemberAddress(i));
-        
-        //Services.Log.Information(member.Name.ToString());
-
-        return member!.Name.ToString();
-    }
-
     public void HandleDeltaTime()
     {
         DeltaTime = (float)Services.Framework.UpdateDelta.TotalSeconds;
@@ -226,49 +176,16 @@ public unsafe class Plugin : IDalamudPlugin
     
     /***************************
      *         RECEIVE         *
-     *        MESSAGES         *
-     *                         *
+     *          DATA           *
      ***************************/
 
-    //  Message format: "++Type;info1;info2;info3;info4"
-    //  EG. "++Settings;10;true;true;true;true"
-    public void RouteReceivedMessage(string message, SeString sender)
+    public void ReceiveMessage()
     {
-        if (message.Length < 2 || sender == Services.ClientState.LocalPlayer!.Name)
+        if (!BServer)
         {
             return;
         }
         
-        var parts = message.Split(";");
-        var part = parts[0];
-
-        switch (part)
-        {
-            //  Settings
-            case "Settings":
-                UnoInterface.ReceiveSettings(parts);
-                break;
-            //  StartGame
-            case "StartGame":
-                UnoInterface.ReceiveStartGame(parts);
-                break;
-            //  EndGame
-            case "EndGame":
-                UnoInterface.ReceiveEndGame(parts);
-                break;
-            //  Turn
-            case "Turn":
-                UnoInterface.ReceiveTurn(parts, sender);
-                break;
-            //  Draw
-            case "Draw":
-                UnoInterface.ReceiveDrawCard(parts, sender);
-                break;
-        }
-    }
-
-    public void ReceiveMessage()
-    {
         byte[] buffer = new byte[1024]; // Buffer for incoming data
         int bytesRead = stream.Read(buffer, 0, buffer.Length);
         if (bytesRead > 0)
@@ -283,12 +200,10 @@ public unsafe class Plugin : IDalamudPlugin
     
     /***************************
      *         SEND            *
-     *        MESSAGES         *
-     *                         *
+     *         Data            *
      ***************************/
     
-    //  From: https://github.com/Infiziert90/ChatTwo/blob/main/ChatTwo/GameFunctions/ChatBox.cs
-    //  Converts String message to Bytes, this is the func that actually sends the message.
+    // Sends data to uno server
     public void SendMsgUnsafe(byte[] message)
     {
         if (client == null)
@@ -296,7 +211,7 @@ public unsafe class Plugin : IDalamudPlugin
         
         stream.Write(message, 0, message.Length);
     }
-    //  Creates String message version. Sends to Sanitise, then sends to SendMsgUnsafe.
+    //  Gets message ready to send to Server. Converts string to Byte[].
     public unsafe void SendMsg(string message)
     {
 

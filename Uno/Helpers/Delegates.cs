@@ -19,7 +19,6 @@ public class Delegates
         
         //  Subscribing to Delegates
         Services.Framework.Update += OnFrameworkTick;
-        Services.Chat.ChatMessage += OnChatMessage;
         Services.ClientState.Logout += OnLogOut;
         Services.ClientState.Login += OnLogIn;
         
@@ -28,7 +27,6 @@ public class Delegates
     //  Calls every Plugin Tick.
     public void OnFrameworkTick(IFramework framework)
     {
-        plugin.SetPartyMembers();
         plugin.HandleDeltaTime();
 
         plugin.PingServer();
@@ -54,39 +52,12 @@ public class Delegates
         plugin.LocPlayerName = null;
     }
     
-    //  Handles all ChatMessages. Subscribed to ChatMessage delegate.
-    public void OnChatMessage(
-        XivChatType type, int senderId, ref SeString sender, ref SeString cmessage, ref bool isHandled)
-    {
-        if (isHandled) return;
-        
-        if (type != XivChatType.Party)
-        {
-            return;
-        }
-        
-        foreach (var p in plugin.PartyMembers!)
-        {
-            if (sender.ToString().Substring(1) == p!.ToString())
-            {
-                var capturedMessage = cmessage.TextValue;
-
-                if (capturedMessage[0] == '+' && capturedMessage[1] == '+')
-                { 
-                    capturedMessage = capturedMessage.Substring(2);
-                    plugin.RouteReceivedMessage(capturedMessage, sender);
-                }
-                break;
-            }
-        }
-    }
 
 
     //  Disposes of Subscribed delegates.
     public void DisposeDelegates()
     {
         Services.Framework.Update -= OnFrameworkTick;
-        Services.Chat.ChatMessage -= OnChatMessage;
         Services.ClientState.Logout -= OnLogOut;
     }
     
