@@ -114,6 +114,8 @@ public unsafe class Plugin : IDalamudPlugin
         try
         {
             client = new TcpClient(IP, 6347);
+            stream = client.GetStream();
+            buffer = new byte[1024];
             BServer = true;
         }
         catch (Exception e)
@@ -122,8 +124,7 @@ public unsafe class Plugin : IDalamudPlugin
             throw;
         }
         
-        stream = client.GetStream();
-        buffer = new byte[1024];
+
     }
     
     

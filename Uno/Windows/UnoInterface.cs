@@ -36,16 +36,13 @@ public struct UnoSettings
 public unsafe class UnoInterface: Window, IDisposable
 {
     private Plugin plugin;
-    private bool bIsTurn = false, bLiveGame = false, bSetDefaultWeights = false, bCanSyncSettings = true, bReverse = false;
+    private bool bIsTurn = false, bLiveGame = false;
     private UnoCard card, currentPlayedCard;
     private List<UnoCard> locPlayerCards;
-    private int numHeldCards, orderIndex;
+    private int numHeldCards;
     private int[] partynumHeldCardsCards;
-    public int Number = 50, Swap = 20, Block = 10, PlusTwo = 10, PlusFour = 5, WildCard = 5;
     private float elapsedTime = 0, SyncSettingsCD = 5;
     private long gameSeed;
-    private string[] MemberOrder;
-    private bool[] MemberTurn;
 
     private Vector4 connectBuuttonTextColor;
     private string connectBuuttonText;
@@ -155,55 +152,6 @@ public unsafe class UnoInterface: Window, IDisposable
         ImGui.EndChild();
 
     
-    }
-
-    private void DrawWeightsSection()
-    {
-        ImGui.Columns(2, "WeightsColumns", false);
-            
-        ImGui.Text("Numbers");
-        ImGui.NextColumn();
-        ImGui.SetColumnWidth(0, 100f);
-        ImGui.SetNextItemWidth(100.0f);
-        ImGui.InputInt("##Numbers", ref Number, 0, 0);
-        ImGui.NextColumn();
-            
-        ImGui.Text("Swap");
-        ImGui.NextColumn();
-        ImGui.SetColumnWidth(1,100f);
-        ImGui.SetNextItemWidth(100.0f);
-        ImGui.InputInt("##Swap", ref Swap, 0, 0);
-        ImGui.NextColumn();
-            
-        ImGui.Text("Block");
-        ImGui.NextColumn();
-        ImGui.SetColumnWidth(2,100f);
-        ImGui.SetNextItemWidth(100.0f);
-        ImGui.InputInt("##Block", ref Block, 0, 0);
-        ImGui.NextColumn();
-            
-        ImGui.Text("+2");
-        ImGui.NextColumn();
-        ImGui.SetColumnWidth(3,100f);
-        ImGui.SetNextItemWidth(100.0f);
-        ImGui.InputInt("##+2", ref PlusTwo, 0, 0);
-        ImGui.NextColumn();
-            
-        ImGui.Text("+4");
-        ImGui.NextColumn();
-        ImGui.SetColumnWidth(4,100f);
-        ImGui.SetNextItemWidth(100.0f);
-        ImGui.InputInt("##+4", ref PlusFour, 0, 0);
-        ImGui.NextColumn();
-            
-        ImGui.Text("WildCard");
-        ImGui.NextColumn();
-        ImGui.SetColumnWidth(5,100f);
-        ImGui.SetNextItemWidth(100.0f);
-        ImGui.InputInt("##WildCard", ref WildCard, 0, 0);
-        ImGui.NextColumn();
-            
-        ImGui.Columns(1);
     }
     
     public override void Draw()
