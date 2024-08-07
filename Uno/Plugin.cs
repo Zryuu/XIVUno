@@ -65,15 +65,15 @@ public unsafe class Plugin : IDalamudPlugin
         PluginInterface.Create<Services>();
         
         var builder = new ConfigurationBuilder()
-                      .SetBasePath(Directory.GetCurrentDirectory()) // Set the base path for configuration files
-                      .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
+                      .SetBasePath(Directory.GetCurrentDirectory())
+                      .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
                       .AddEnvironmentVariables();
 
         var configuration = builder.Build();
         
         string IP = configuration["AppSettings:ServerIP"];
         
-        client = new TcpClient("34.174.34.114", 6347);
+        client = new TcpClient(IP, 6347);
         stream = client.GetStream();
         buffer = new byte[1024];
         
