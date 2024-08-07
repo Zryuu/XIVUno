@@ -69,11 +69,11 @@ public unsafe class Plugin : IDalamudPlugin
                       .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
                       .AddEnvironmentVariables();
 
-        var configureation = builder.Build();
+        var configuration = builder.Build();
         
-        string IP = configureation["AppSettings:IP"];
+        string IP = configuration["AppSettings:ServerIP"];
         
-        client = new TcpClient(IP, 6347);
+        client = new TcpClient("34.174.34.114", 6347);
         stream = client.GetStream();
         buffer = new byte[1024];
         

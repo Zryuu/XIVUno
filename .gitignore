@@ -5,4 +5,4 @@ bin/
 .idea
 .editorconfig
 .env
-.json
+appsettings.json

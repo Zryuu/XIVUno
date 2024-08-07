@@ -934,12 +934,12 @@ public unsafe class UnoInterface: Window, IDisposable
             connectBuuttonText = "Connected";
         }
         
-        
         ImGui.PushStyleColor(ImGuiCol.Text, connectBuuttonTextColor);
-        if (ImGui.Button(connectBuuttonText, new Vector2(20, 100)))
+        if (ImGui.Button(connectBuuttonText, new Vector2(100, 30)))
         {
-
+            plugin.SendMsg(1.ToString());
         }
+        ImGui.PopStyleColor();
         
         ImGui.EndChild();
         
@@ -999,16 +999,9 @@ public unsafe class UnoInterface: Window, IDisposable
         //plugin.bytesRead = plugin.stream.Read(plugin.buffer, 0, plugin.buffer.Length);
         //ImGui.Text(plugin.bytesRead.ToString());
         
-        //DrawTabs();
+        DrawTabs();
         
         //SyncSettingsCoolDown();
-        
-        if (ImGui.Button("Get time",new Vector2(100, 100)))
-        {
-            string msg = $"3{Services.ClientState.LocalPlayer!.Name.ToString()}";
-            byte[] message = Encoding.ASCII.GetBytes(msg);
-            plugin.stream.Write(message, 0, message.Length);
-        }
         
     }
 }
