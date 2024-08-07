@@ -31,12 +31,14 @@ public class Delegates
         plugin.SetPartyMembers();
         plugin.HandleDeltaTime();
 
-        plugin.PingServer();
-        
+        //plugin.PingServer();
+       
+        /*
         if (plugin.stream.DataAvailable && plugin.BServer)
         {
             plugin.ReceiveMessage();
         }
+        */
     }
     
     //  Fires on Login

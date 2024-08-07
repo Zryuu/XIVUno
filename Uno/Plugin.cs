@@ -67,8 +67,13 @@ public unsafe class Plugin : IDalamudPlugin
 
         var IP = Environment.GetEnvironmentVariable("UnoServerIP");
 
-        client = new TcpClient(IP, 6347);
-        stream = client.GetStream();
+        foreach (var Env in Environment.GetEnvironmentVariables())
+        {
+            Services.Log.Information("Var: " + Env);
+        }
+        
+        //client = new TcpClient(IP, 6347);
+        //stream = client.GetStream();
         buffer = new byte[1024];
         
         //  Initing Helpers
