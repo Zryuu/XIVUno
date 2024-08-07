@@ -46,7 +46,7 @@ public unsafe class Plugin : IDalamudPlugin
     
     private List<string> capturedMessages = new List<string>();
     public SeString[]? PartyMembers;
-    public bool bIsLeader, bDebug = false, bConnected = false;
+    public bool bIsLeader, bDebug = false;
     public long? currentPartyId;
     public MessageType MessageType;
     public TcpClient client;
@@ -114,6 +114,7 @@ public unsafe class Plugin : IDalamudPlugin
         try
         {
             client = new TcpClient(IP, 6347);
+            BServer = true;
         }
         catch (Exception e)
         {
