@@ -65,16 +65,7 @@ public unsafe class Plugin : IDalamudPlugin
     {
         PluginInterface.Create<Services>();
 
-        var IP = Environment.GetEnvironmentVariable("UnoServerIP");
-
-        foreach (var Env in Environment.GetEnvironmentVariables())
-        {
-            Services.Log.Information("Var: " + Env);
-        }
-        
-        //client = new TcpClient(IP, 6347);
-        //stream = client.GetStream();
-        buffer = new byte[1024];
+        ConnectToServer();
         
         //  Initing Helpers
         Delegates     = new Delegates(this);
@@ -114,6 +105,24 @@ public unsafe class Plugin : IDalamudPlugin
         //  Helpers
         Delegates.DisposeDelegates();
         Cm.DisposeCommands();
+    }
+
+    public void ConnectToServer()
+    {
+        var IP = Environment.GetEnvironmentVariable("UnoServerIP");
+
+        try
+        {
+            client = new TcpClient(IP, 6347);
+        }
+        catch (Exception e)
+        {
+            Services.Log.Information("Uno Server was unresponsive. It might be down...");
+            throw;
+        }
+        
+        stream = client.GetStream();
+        buffer = new byte[1024];
     }
     
     

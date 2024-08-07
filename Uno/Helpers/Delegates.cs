@@ -33,12 +33,12 @@ public class Delegates
 
         //plugin.PingServer();
        
-        /*
+        
         if (plugin.stream.DataAvailable && plugin.BServer)
         {
             plugin.ReceiveMessage();
         }
-        */
+        
     }
     
     //  Fires on Login
