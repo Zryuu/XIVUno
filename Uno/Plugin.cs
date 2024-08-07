@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Net.Sockets;
-using System.Runtime.CompilerServices;
 using System.Text;
 using Dalamud.IoC;
 using Dalamud.Plugin;
@@ -9,10 +9,10 @@ using Dalamud.Game.ClientState.Objects.SubKinds;
 using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Interface.Windowing;
 using Dalamud.Utility.Signatures;
-using DotNetEnv;
 using FFXIVClientStructs.FFXIV.Client.Game.Group;
 using FFXIVClientStructs.FFXIV.Client.System.String;
 using FFXIVClientStructs.FFXIV.Client.UI;
+using Microsoft.Extensions.Configuration;
 using Uno.Helpers;
 using Uno.Windows;
 
@@ -37,22 +37,23 @@ public unsafe class Plugin : IDalamudPlugin
     [Signature("48 89 5C 24 ?? 57 48 83 EC 20 48 8B FA 48 8B D9 45 84 C9")]
     private readonly delegate* unmanaged<UIModule*, Utf8String*, nint, byte, void> ProcessChatBox = null!;
     
-    public IPlayerCharacter? LocPlayer;
-    public GroupManager* GM;
-    public string LocPlayerName;
-    private int index = 0; //  this is badly named and will get renamed later (Just stops multiple messages being sent)
+    public IPlayerCharacter? LocPlayer { get; set; }
+    public readonly GroupManager* GM;
+    public string LocPlayerName { get; set; }
+    public bool BServer { get; set; }
+    public bool BPing { get; set; }
     
     private List<string> capturedMessages = new List<string>();
     public SeString[]? PartyMembers;
-    public bool bIsLeader, bDebug = false;
+    public bool bIsLeader, bDebug = false, bConnected = false;
     public long? currentPartyId;
     public MessageType MessageType;
     public TcpClient client;
     public NetworkStream stream;
     public byte[] buffer;
     public int bytesRead;
-    
-    public float DeltaTime = 0;
+
+    public float DeltaTime = 0, LastPing = 0;
     
     public Configuration Configuration { get; init; }
     public readonly WindowSystem WindowSystem = new("UNO");
@@ -63,13 +64,23 @@ public unsafe class Plugin : IDalamudPlugin
     {
         PluginInterface.Create<Services>();
         
+        var builder = new ConfigurationBuilder()
+                      .SetBasePath(Directory.GetCurrentDirectory()) // Set the base path for configuration files
+                      .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
+                      .AddEnvironmentVariables();
+
+        var configureation = builder.Build();
+        
+        string IP = configureation["AppSettings:IP"];
+        
+        client = new TcpClient(IP, 6347);
+        stream = client.GetStream();
+        buffer = new byte[1024];
+        
         //  Initing Helpers
         Delegates     = new Delegates(this);
         Cm            = new CommandManager(this);
         GM            = GroupManager.Instance();
-
-
-        string IP = Environment.GetEnvironmentVariable("IP");
         
         Configuration = Services.PluginInterface.GetPluginConfig() as Configuration ?? new Configuration();
         
@@ -89,10 +100,6 @@ public unsafe class Plugin : IDalamudPlugin
 
         // Adds another button that is doing the same but for the main ui of the plugin
         Services.PluginInterface.UiBuilder.OpenMainUi += ToggleMainUI;
-        
-        client = new TcpClient("34.174.34.114", 6347);
-        stream = client.GetStream();
-        buffer = new byte[1024];
         
     }
 
@@ -188,7 +195,26 @@ public unsafe class Plugin : IDalamudPlugin
         DeltaTime = (float)Services.Framework.UpdateDelta.TotalSeconds;
     }
     
+    public void PingServer()
+    {
+        if (client == null!)
+        {
+            Services.Log.Information("Delegates::PingServer(): Server is null....Please let me know");
+            BServer = false;
+            return;
+        }
+
+        if (!BServer) { return; }
         
+        if (LastPing >= 300) { BPing = true; SendMsg(0.ToString());; }
+        
+        LastPing += DeltaTime;
+
+        if (BPing) { BPing = false; }
+    }
+    
+    
+    
     /***************************
      *         RECEIVE         *
      *        MESSAGES         *
@@ -231,6 +257,17 @@ public unsafe class Plugin : IDalamudPlugin
                 break;
         }
     }
+
+    public void ReceiveMessage()
+    {
+        byte[] buffer = new byte[1024]; // Buffer for incoming data
+        int bytesRead = stream.Read(buffer, 0, buffer.Length);
+        if (bytesRead > 0)
+        {
+            string response = Encoding.ASCII.GetString(buffer, 0, bytesRead);
+            Services.Log.Information($"Received: {response}");
+        }
+    }
     
     
     
@@ -245,47 +282,27 @@ public unsafe class Plugin : IDalamudPlugin
     //  Converts String message to Bytes, this is the func that actually sends the message.
     public void SendMsgUnsafe(byte[] message)
     {
-        if (ProcessChatBox == null)
-            throw new InvalidOperationException("Could not find signature for chat sending");
+        if (client == null)
+            throw new InvalidOperationException("Server is null");
         
-        var mes = Utf8String.FromSequence(message);
-        ProcessChatBox(UIModule.Instance(), mes, IntPtr.Zero, 0);
-        mes->Dtor(true);
+        stream.Write(message, 0, message.Length);
     }
     //  Creates String message version. Sends to Sanitise, then sends to SendMsgUnsafe.
     public unsafe void SendMsg(string message)
     {
 
-        message = "/p " + message;
+        message += $"{Services.ClientState.LocalPlayer!.Name}";
+        var messageBytes = Encoding.ASCII.GetBytes(message);
         
-        var bytes = Encoding.UTF8.GetBytes(message);
-        
-        if (index > 0)
+        switch (messageBytes.Length)
         {
-            return;
+            case 0:
+                throw new ArgumentException("message is empty", nameof(message));
+            case > 500:
+                throw new ArgumentException("message is longer than 500 bytes", nameof(message));
         }
         
-        if (bytes.Length == 0)
-            throw new ArgumentException("message is empty", nameof(message));
-
-        if (bytes.Length > 500)
-            throw new ArgumentException("message is longer than 500 bytes", nameof(message));
-
-        if (message.Length != SanitiseText(message).Length)
-            throw new ArgumentException("message contained invalid characters", nameof(message));
-        
-        SendMsgUnsafe(bytes);
-    }
-    //  Cleans text and makes sure it only sends characters a player could normally send.
-    private string SanitiseText(string text)
-    {
-        var uText = Utf8String.FromString(text);
-
-        uText->SanitizeString( 0x27F, (Utf8String*)nint.Zero);
-        var sanitised = uText->ToString();
-        uText->Dtor(true);
-
-        return sanitised;
+        SendMsgUnsafe(messageBytes);
     }
     
     

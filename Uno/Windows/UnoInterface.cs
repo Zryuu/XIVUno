@@ -47,6 +47,8 @@ public unsafe class UnoInterface: Window, IDisposable
     private string[] MemberOrder;
     private bool[] MemberTurn;
 
+    private Vector4 connectBuuttonTextColor;
+    private string connectBuuttonText;
     
     public UnoSettings UnoSettings;
     
@@ -920,6 +922,24 @@ public unsafe class UnoInterface: Window, IDisposable
         {
             ImGui.Text($"Either a Live game({bLiveGame}) is happening or You're not the PartyLeader(PartyLeader:{plugin.bIsLeader})");
         }
+
+        if (!plugin.BServer)
+        { 
+            connectBuuttonTextColor = new Vector4(1, 0, 0, 1);
+            connectBuuttonText = "Connect";
+        }
+        else
+        {
+            connectBuuttonTextColor = new Vector4(0, 1, 0, 1);
+            connectBuuttonText = "Connected";
+        }
+        
+        
+        ImGui.PushStyleColor(ImGuiCol.Text, connectBuuttonTextColor);
+        if (ImGui.Button(connectBuuttonText, new Vector2(20, 100)))
+        {
+
+        }
         
         ImGui.EndChild();
         
@@ -982,13 +1002,12 @@ public unsafe class UnoInterface: Window, IDisposable
         //DrawTabs();
         
         //SyncSettingsCoolDown();
-
-        if (ImGui.Button("Connect", new Vector2(100, 100)))
+        
+        if (ImGui.Button("Get time",new Vector2(100, 100)))
         {
-            string msg = plugin.LocPlayerName;
+            string msg = $"3{Services.ClientState.LocalPlayer!.Name.ToString()}";
             byte[] message = Encoding.ASCII.GetBytes(msg);
             plugin.stream.Write(message, 0, message.Length);
-            
         }
         
     }
