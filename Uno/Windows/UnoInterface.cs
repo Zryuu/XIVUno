@@ -132,7 +132,12 @@ public unsafe class UnoInterface: Window, IDisposable
         ImGui.PushStyleColor(ImGuiCol.Text, connectBuuttonTextColor);
         if (ImGui.Button(connectBuuttonText, new Vector2(100, 30)))
         {
-            plugin.SendMsg(1.ToString());
+            plugin.ConnectToServer();
+
+            if (plugin.BServer)
+            {
+                plugin.SendMsg(1.ToString());
+            }
         }
         ImGui.PopStyleColor();
         

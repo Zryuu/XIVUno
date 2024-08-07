@@ -64,8 +64,6 @@ public unsafe class Plugin : IDalamudPlugin
     public Plugin()
     {
         PluginInterface.Create<Services>();
-
-        ConnectToServer();
         
         //  Initing Helpers
         Delegates     = new Delegates(this);
