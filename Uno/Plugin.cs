@@ -155,14 +155,14 @@ public unsafe class Plugin : IDalamudPlugin
     
     public void PingServer()
     {
+        if (!BServer) { return; }
+        
         if (client == null!)
         {
             Services.Log.Information("Delegates::PingServer(): Server is null....Please let me know");
             BServer = false;
             return;
         }
-
-        if (!BServer) { return; }
         
         if (LastPing >= 300) { BPing = true; SendMsg(0.ToString());; }
         
