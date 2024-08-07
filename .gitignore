@@ -6,4 +6,4 @@ bin/
 .editorconfig
 .env
 appsettings.json
-launchSettings.json
+Properties/
