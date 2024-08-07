@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Net.Sockets;
+using System.Reflection;
 using System.Text;
 using Dalamud.IoC;
 using Dalamud.Plugin;
@@ -63,16 +64,9 @@ public unsafe class Plugin : IDalamudPlugin
     public Plugin()
     {
         PluginInterface.Create<Services>();
-        
-        var builder = new ConfigurationBuilder()
-                      .SetBasePath(Directory.GetCurrentDirectory())
-                      .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
-                      .AddEnvironmentVariables();
 
-        var configuration = builder.Build();
-        
-        string IP = configuration["AppSettings:ServerIP"];
-        
+        var IP = Environment.GetEnvironmentVariable("UnoServerIP");
+
         client = new TcpClient(IP, 6347);
         stream = client.GetStream();
         buffer = new byte[1024];

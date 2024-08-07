@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project Sdk="Microsoft.NET.Sdk">
-  <Import Project="Dalamud.Plugin.Bootstrap.targets"/>
+  <Import Project="Dalamud.Plugin.Bootstrap.targets" />
 
   <PropertyGroup>
     <Version>0.0.0.1</Version>
@@ -16,10 +16,25 @@
     <ItemGroup>
         <ProjectReference Include="..\..\Tools\OtterGui\OtterGui.csproj" />
     </ItemGroup>
-
+    
     <ItemGroup>
       <PackageReference Include="DotNetEnv" Version="3.1.0" />
       <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="9.0.0-preview.6.24327.7" />
       <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="9.0.0-preview.6.24327.7" />
+    </ItemGroup>
+    
+    <ItemGroup>
+      <Compile Update="Properties\Resources.Designer.cs">
+        <DesignTime>True</DesignTime>
+        <AutoGen>True</AutoGen>
+        <DependentUpon>Resources.resx</DependentUpon>
+      </Compile>
+    </ItemGroup>
+    
+    <ItemGroup>
+      <EmbeddedResource Update="Properties\Resources.resx">
+        <Generator>ResXFileCodeGenerator</Generator>
+        <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+      </EmbeddedResource>
     </ItemGroup>
 </Project>
