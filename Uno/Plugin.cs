@@ -103,7 +103,15 @@ public unsafe class Plugin : IDalamudPlugin
 
     public void ConnectToServer()
     {
-        var IP = Environment.GetEnvironmentVariable("UnoServerIP");
+        
+        var builder = new ConfigurationBuilder()
+                      .SetBasePath(Directory.GetCurrentDirectory())
+                      .AddJsonFile("appsettings.json", 
+                                   optional: true, reloadOnChange: true);
+
+        var configuration = builder.Build();
+        
+        var IP = configuration["AppSettings:ServerIP"];
 
         try
         {
