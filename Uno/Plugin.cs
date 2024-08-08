@@ -176,7 +176,7 @@ public unsafe class Plugin : IDalamudPlugin
 
     public void ReceiveMessage()
     {
-        if (!BServer)
+        if (!BServer || Stream == null)
         {
             return;
         }
