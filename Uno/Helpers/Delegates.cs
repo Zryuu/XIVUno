@@ -28,13 +28,16 @@ public class Delegates
     public void OnFrameworkTick(IFramework framework)
     {
         plugin.HandleDeltaTime();
-
-        plugin.PingServer();
        
         
-        if (plugin.stream.DataAvailable && plugin.BServer)
+        if (plugin is { Stream: { DataAvailable: true }, BServer: true })
         {
             plugin.ReceiveMessage();
+            plugin.PingServer();
+        }
+        else
+        {
+            Services.Log.Information("It didn't work...womp womp");
         }
         
     }

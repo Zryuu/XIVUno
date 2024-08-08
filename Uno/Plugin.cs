@@ -34,10 +34,6 @@ public unsafe class Plugin : IDalamudPlugin
     public Delegates Delegates { get; private set; }
     public CommandManager Cm { get; private set; }
     
-    //  From: https://git.anna.lgbt/anna/XivCommon/src/branch/main/XivCommon/Functions/Chat.cs
-    [Signature("48 89 5C 24 ?? 57 48 83 EC 20 48 8B FA 48 8B D9 45 84 C9")]
-    private readonly delegate* unmanaged<UIModule*, Utf8String*, nint, byte, void> ProcessChatBox = null!;
-    
     public IPlayerCharacter? LocPlayer { get; set; }
     public readonly GroupManager* GM;
     public string LocPlayerName { get; set; }
@@ -49,8 +45,8 @@ public unsafe class Plugin : IDalamudPlugin
     public bool bIsLeader, bDebug = false;
     public long? currentPartyId;
     public MessageType MessageType;
-    public TcpClient client;
-    public NetworkStream stream;
+    public TcpClient? client;
+    public NetworkStream? Stream;
     public byte[] buffer;
     public int bytesRead;
 
@@ -112,7 +108,7 @@ public unsafe class Plugin : IDalamudPlugin
         try
         {
             client = new TcpClient(IP, 6347);
-            stream = client.GetStream();
+            Stream = client.GetStream();
             buffer = new byte[1024];
             BServer = true;
         }
@@ -157,7 +153,7 @@ public unsafe class Plugin : IDalamudPlugin
     {
         if (!BServer) { return; }
         
-        if (client == null!)
+        if (client == null)
         {
             Services.Log.Information("Delegates::PingServer(): Server is null....Please let me know");
             BServer = false;
@@ -186,7 +182,7 @@ public unsafe class Plugin : IDalamudPlugin
         }
         
         byte[] buffer = new byte[1024]; // Buffer for incoming data
-        int bytesRead = stream.Read(buffer, 0, buffer.Length);
+        int bytesRead = Stream.Read(buffer, 0, buffer.Length);
         if (bytesRead > 0)
         {
             string response = Encoding.ASCII.GetString(buffer, 0, bytesRead);
@@ -208,7 +204,7 @@ public unsafe class Plugin : IDalamudPlugin
         if (client == null)
             throw new InvalidOperationException("Server is null");
         
-        stream.Write(message, 0, message.Length);
+        Stream!.Write(message, 0, message.Length);
     }
     //  Gets message ready to send to Server. Converts string to Byte[].
     public unsafe void SendMsg(string message)
