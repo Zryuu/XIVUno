@@ -19,13 +19,28 @@ using Uno.Windows;
 
 namespace Uno;
 
-public enum MessageType
+public enum MessageTypeSend
 {
-    Settings,
-    StartGame,
-    EndGame,
-    Turn,
-    Draw
+    Ping = 0,
+    Login = 1,
+    Logout = 2,
+    StartGame = 3,
+    EndGame = 4,
+    CreateRoom = 5,
+    JoinRoom = 6,
+    LeaveRoom = 7
+}
+
+public enum MessageTypeReceive
+{
+    Ping = 0,
+    Login = 1,
+    Logout = 2,
+    StartGame = 3,
+    EndGame = 4,
+    JoinRoom = 6,
+    LeaveRoom = 7,
+    UpdateRoom = 8
 }
 
 public unsafe class Plugin : IDalamudPlugin
@@ -33,24 +48,26 @@ public unsafe class Plugin : IDalamudPlugin
     [PluginService] internal static IDalamudPluginInterface PluginInterface { get; private set; } = null!;
     public Delegates Delegates { get; private set; }
     public CommandManager Cm { get; private set; }
-    
     public IPlayerCharacter? LocPlayer { get; set; }
     public readonly GroupManager* GM;
-    public string LocPlayerName { get; set; }
+    
     public bool BServer { get; set; }
     public bool BPing { get; set; }
     
-    private List<string> capturedMessages = new List<string>();
-    public SeString[]? PartyMembers;
-    public bool bIsLeader, bDebug = false;
-    public long? currentPartyId;
-    public MessageType MessageType;
+    public MessageTypeSend MessageTypeSend;
+    public MessageTypeReceive MessageTypeReceive;
     public TcpClient? client;
     public NetworkStream? Stream;
     public byte[] buffer;
     public int bytesRead;
+    
+    public string XivName { get; set; }
+    private bool BInUnoGame { get; set; }
+    private DateTime LastPingSent { get; set; }
+    private DateTime LastPingReceived { get; set; }
+    private int CurrentRoomId { get; set; }
 
-    public float DeltaTime = 0, LastPing = 0;
+    public float DeltaTime = 0;
     
     public Configuration Configuration { get; init; }
     public readonly WindowSystem WindowSystem = new("UNO");
@@ -149,7 +166,7 @@ public unsafe class Plugin : IDalamudPlugin
         LocPlayer = Services.ClientState.LocalPlayer!;
 
         //  Get User name.
-        LocPlayerName = GM->MainGroup.GetPartyMemberByEntityId(Services.ClientState.LocalPlayer!.EntityId)->NameString;
+        XivName = GM->MainGroup.GetPartyMemberByEntityId(Services.ClientState.LocalPlayer!.EntityId)->NameString;
     }
     
     public void HandleDeltaTime()
@@ -168,9 +185,7 @@ public unsafe class Plugin : IDalamudPlugin
             return;
         }
         
-        if (LastPing >= 300) { BPing = true; SendMsg(0.ToString());; }
-        
-        LastPing += DeltaTime;
+        if (LastPingReceived.Second >= 300) { BPing = true; SendMsg(0.ToString()); }
 
         if (BPing) { BPing = false; }
     }

@@ -52,7 +52,7 @@ public class Delegates
     public void OnLogOut()
     {
         plugin.LocPlayer = null;
-        plugin.LocPlayerName = null;
+        plugin.XivName = null;
     }
     
 

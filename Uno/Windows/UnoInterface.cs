@@ -140,6 +140,11 @@ public unsafe class UnoInterface: Window, IDisposable
             }
         }
         ImGui.PopStyleColor();
+
+        if (ImGui.Button("Join Room"))
+        {
+            
+        }
         
         ImGui.EndChild();
 
