@@ -41,11 +41,14 @@ public unsafe class UnoInterface: Window, IDisposable
     private List<UnoCard> locPlayerCards;
     private int numHeldCards;
     private int[] partynumHeldCardsCards;
-    private float elapsedTime = 0, SyncSettingsCD = 5;
-    private long gameSeed;
+    private float elapsedTime = 0;
+    private int gameSeed;
 
     private Vector4 connectBuuttonTextColor;
     private string connectBuuttonText;
+
+    private int typedRoomId;
+    private int maxPlayers;
     
     public UnoSettings UnoSettings;
     
@@ -140,10 +143,24 @@ public unsafe class UnoInterface: Window, IDisposable
             }
         }
         ImGui.PopStyleColor();
-
+        
+        ImGui.SetCursorPos(new Vector2(((ImGui.GetWindowWidth() / 3) * 2) - 100, 20));
+        ImGui.SetNextItemWidth(100);
+        ImGui.InputInt("roomid###", ref typedRoomId);
+        
+        
+        ImGui.SetCursorPos(new Vector2((ImGui.GetWindowWidth() / 3) * 2, 20));
         if (ImGui.Button("Join Room"))
         {
-            
+            plugin.SendMsg($"{6}{typedRoomId}");
+            Services.Log.Information("Sent Join Room to Server");
+        }
+        
+        ImGui.SetCursorPos(new Vector2((ImGui.GetWindowWidth() / 3) * 2 + 50, 20));
+        if (ImGui.Button("Create Room"))
+        {
+            plugin.SendMsg($"{5.ToString()}{4}");
+            Services.Log.Information("Sent Create room to Server");
         }
         
         ImGui.EndChild();

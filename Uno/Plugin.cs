@@ -1,18 +1,12 @@
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Net.Sockets;
-using System.Reflection;
 using System.Text;
 using Dalamud.IoC;
 using Dalamud.Plugin;
 using Dalamud.Game.ClientState.Objects.SubKinds;
-using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Interface.Windowing;
-using Dalamud.Utility.Signatures;
 using FFXIVClientStructs.FFXIV.Client.Game.Group;
-using FFXIVClientStructs.FFXIV.Client.System.String;
-using FFXIVClientStructs.FFXIV.Client.UI;
 using Microsoft.Extensions.Configuration;
 using Uno.Helpers;
 using Uno.Windows;
@@ -65,7 +59,7 @@ public unsafe class Plugin : IDalamudPlugin
     private bool BInUnoGame { get; set; }
     private DateTime LastPingSent { get; set; }
     private DateTime LastPingReceived { get; set; }
-    private int CurrentRoomId { get; set; }
+    public int? CurrentRoomId { get; set; }
 
     public float DeltaTime = 0;
     
@@ -128,11 +122,11 @@ public unsafe class Plugin : IDalamudPlugin
 
         var configuration = builder.Build();
         
-        var IP = configuration["AppSettings:ServerIP"];
+        var ip = configuration["AppSettings:ServerIP"];
 
         try
         {
-            client = new TcpClient(IP, 6347);
+            client = new TcpClient(ip, 6347);
             Stream = client.GetStream();
             buffer = new byte[1024];
             BServer = true;
