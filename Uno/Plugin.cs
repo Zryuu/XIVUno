@@ -15,26 +15,27 @@ namespace Uno;
 
 public enum MessageTypeSend
 {
-    Ping = 0,
-    Login = 1,
-    Logout = 2,
-    StartGame = 3,
-    EndGame = 4,
-    CreateRoom = 5,
-    JoinRoom = 6,
-    LeaveRoom = 7
+    Ping = 00,
+    Login = 01,
+    Logout = 02,
+    StartGame = 03,
+    EndGame = 04,
+    CreateRoom = 05,
+    JoinRoom = 06,
+    LeaveRoom = 07
 }
 
 public enum MessageTypeReceive
 {
-    Ping = 0,
-    Login = 1,
-    Logout = 2,
-    StartGame = 3,
-    EndGame = 4,
-    JoinRoom = 6,
-    LeaveRoom = 7,
-    UpdateRoom = 8
+    Ping = 00,
+    Login = 01,
+    Logout = 02,
+    StartGame = 03,
+    EndGame = 04,
+    JoinRoom = 05,
+    LeaveRoom = 06,
+    UpdateRoom = 07,
+    Error = 99
 }
 
 public unsafe class Plugin : IDalamudPlugin
@@ -96,6 +97,7 @@ public unsafe class Plugin : IDalamudPlugin
         // Adds another button that is doing the same but for the main ui of the plugin
         Services.PluginInterface.UiBuilder.OpenMainUi += ToggleMainUI;
         
+        SaveLocPlayer();
     }
 
     //  DISPOSE
@@ -126,7 +128,7 @@ public unsafe class Plugin : IDalamudPlugin
 
         try
         {
-            client = new TcpClient(ip, 6347);
+            client = new TcpClient("34.174.34.114", 6347);
             Stream = client.GetStream();
             buffer = new byte[1024];
             BServer = true;
@@ -160,7 +162,7 @@ public unsafe class Plugin : IDalamudPlugin
         LocPlayer = Services.ClientState.LocalPlayer!;
 
         //  Get User name.
-        XivName = GM->MainGroup.GetPartyMemberByEntityId(Services.ClientState.LocalPlayer!.EntityId)->NameString;
+        XivName = LocPlayer.Name.ToString();
     }
     
     public void HandleDeltaTime()
@@ -168,7 +170,7 @@ public unsafe class Plugin : IDalamudPlugin
         DeltaTime = (float)Services.Framework.UpdateDelta.TotalSeconds;
     }
     
-    public void PingServer()
+    public void Ping()
     {
         if (!BServer) { return; }
         
@@ -179,18 +181,26 @@ public unsafe class Plugin : IDalamudPlugin
             return;
         }
         
-        if (LastPingReceived.Second >= 300) { BPing = true; SendMsg(0.ToString()); }
+        if (LastPingReceived.Second >= 240) 
+        {
+            BPing = true; 
+            SendMsg(0.ToString()); 
+        }
 
         if (BPing) { BPing = false; }
     }
     
+    public void Pong()
+    {
+        LastPingReceived = DateTime.Now;
+    }
     
     
     /***************************
      *         RECEIVE         *
      *          DATA           *
      ***************************/
-
+    
     public void ReceiveMessage()
     {
         if (!BServer || Stream == null)
@@ -203,13 +213,77 @@ public unsafe class Plugin : IDalamudPlugin
         if (bytesRead > 0)
         {
             string response = Encoding.ASCII.GetString(buffer, 0, bytesRead);
+            ReceiveCommand(response);
+            
             Services.Log.Information($"Received: {response}");
         }
     }
     
-    
-    
-    
+    private void ReceiveCommand(string message)
+    {
+        if (string.IsNullOrEmpty(message) || message.Length < 2)
+        {
+            Services.Log.Information($"Received empty response from server: {message}");
+            return;
+        }
+        
+        var commandByte = int.Parse(message.Substring(0, 2));
+        var commandArgument = message[1..];
+        
+        var route = (MessageTypeReceive)(commandByte);
+        
+        switch (route)
+        {
+            //  Ping = 00
+            case MessageTypeReceive.Ping:
+                Pong();
+                break ;
+            //  Login = 01
+            case MessageTypeReceive.Login:
+                
+                break ;
+            //  Logout = 02
+            case MessageTypeReceive.Logout:
+                
+                break ;
+            //  StartGame = 03
+            case MessageTypeReceive.StartGame:
+                
+                break ;
+            //  EndGame = 04
+            case MessageTypeReceive.EndGame:
+                
+                break ;
+            //  JoinRoom = 05
+            case MessageTypeReceive.JoinRoom:
+                
+                break ;
+            //  LeaveRoom = 06
+            case MessageTypeReceive.LeaveRoom:
+                
+                break ;
+            //  UpdateRoom = 07
+            case MessageTypeReceive.UpdateRoom:
+                
+                break ;
+            //  Error = 99
+            case MessageTypeReceive.Error:
+                HandleErrorMsg(commandArgument);
+                break ;
+            default:
+                Services.Log.Information("Invalid Response received.");
+                break;
+        }
+        
+    }
+
+
+    private void HandleErrorMsg(string message)
+    {
+        Services.Log.Information($"[ERROR]: {message[1..]}");
+        Services.Chat.PrintError("[UNO]: Error response received from server. Please check xllog (/xllog) for error message.");
+    }
+
     /***************************
      *         SEND            *
      *         Data            *
@@ -226,8 +300,6 @@ public unsafe class Plugin : IDalamudPlugin
     //  Gets message ready to send to Server. Converts string to Byte[].
     public unsafe void SendMsg(string message)
     {
-
-        message += $"{Services.ClientState.LocalPlayer!.Name}";
         var messageBytes = Encoding.ASCII.GetBytes(message);
         
         switch (messageBytes.Length)
@@ -241,6 +313,13 @@ public unsafe class Plugin : IDalamudPlugin
         SendMsgUnsafe(messageBytes);
     }
     
+    public string CommandType(MessageTypeSend r, string message)
+    {
+        var response = $"{(int)r:D2}" + message;
+        Services.Log.Information($"Message: {message}");
+        Services.Log.Information($"Response: {response}");
+        return response;
+    }
     
     private void DrawUI() => WindowSystem.Draw();
     public void ToggleConfigUI() => ConfigWindow.Toggle();

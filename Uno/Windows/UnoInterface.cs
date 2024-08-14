@@ -60,8 +60,6 @@ public unsafe class UnoInterface: Window, IDisposable
         card = new UnoCard();
         locPlayerCards = new List<UnoCard>();
         
-
-        
         Services.GameInteropProvider.InitializeFromAttributes(this);
         
         SizeConstraints = new WindowSizeConstraints
@@ -89,6 +87,11 @@ public unsafe class UnoInterface: Window, IDisposable
      *          UI             *
      *                         *
      ***************************/
+
+    private void SetRoomID()
+    {
+        
+    }
     
     //  Draws the Tabs at the top of the Interface window.
     private void DrawTabs()
@@ -139,24 +142,24 @@ public unsafe class UnoInterface: Window, IDisposable
 
             if (plugin.BServer)
             {
-                plugin.SendMsg(1.ToString());
+                plugin.SendMsg(plugin.CommandType(MessageTypeSend.Login, $"{plugin.XivName}"));
             }
         }
         ImGui.PopStyleColor();
         
         ImGui.SetCursorPos(new Vector2(((ImGui.GetWindowWidth() / 3) * 2) - 100, 20));
         ImGui.SetNextItemWidth(100);
-        ImGui.InputInt("roomid###", ref typedRoomId);
+        ImGui.InputInt("roomid###", ref typedRoomId, 0);
         
         
-        ImGui.SetCursorPos(new Vector2((ImGui.GetWindowWidth() / 3) * 2, 20));
+        ImGui.SetCursorPos(new Vector2(((ImGui.GetWindowWidth() / 3) * 2) + 100, 20));
         if (ImGui.Button("Join Room"))
         {
             plugin.SendMsg($"{6}{typedRoomId}");
             Services.Log.Information("Sent Join Room to Server");
         }
         
-        ImGui.SetCursorPos(new Vector2((ImGui.GetWindowWidth() / 3) * 2 + 50, 20));
+        ImGui.SetCursorPos(new Vector2(((ImGui.GetWindowWidth() / 3) * 2) + 200, 20));
         if (ImGui.Button("Create Room"))
         {
             plugin.SendMsg($"{5.ToString()}{4}");
