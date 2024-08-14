@@ -16,21 +16,20 @@ namespace Uno;
 //  CommandBytes sent to Server
 public enum MessageTypeSend
 {
-    Ping = 00,
-    Login = 01,
-    Logout = 02,
-    StartGame = 03,
-    EndGame = 04,
-    CreateRoom = 05,
-    JoinRoom = 06,
-    LeaveRoom = 07
+    Ping = 0,
+    Login,
+    Logout,
+    StartGame,
+    EndGame,
+    CreateRoom,
+    JoinRoom,
+    LeaveRoom
 }
 
 //  CommandBytes received from Server
 public enum MessageTypeReceive
 {
     Ping = 0,
-    Pong,
     Login,
     Logout,
     StartGame,
@@ -49,11 +48,12 @@ public unsafe class Plugin : IDalamudPlugin
     public IPlayerCharacter? LocPlayer { get; set; }
     public readonly GroupManager* GM;
     
-    public bool BServer { get; set; }
-    public bool BPing { get; set; }
+    public bool ConnectedToServer { get; set; }
+    public bool Ping { get; set; }
     
-    public MessageTypeSend MessageTypeSend;
-    public MessageTypeReceive MessageTypeReceive;
+    internal MessageTypeSend MessageTypeSend;
+    internal MessageTypeReceive MessageTypeReceive;
+    
     public TcpClient? client;
     public NetworkStream? Stream;
     public byte[] buffer;
@@ -65,7 +65,7 @@ public unsafe class Plugin : IDalamudPlugin
     private DateTime LastPingReceived { get; set; }
     public int? CurrentRoomId { get; set; }
 
-    public float DeltaTime = 0;
+    public float DeltaTime;
     
     public Configuration Configuration { get; init; }
     public readonly WindowSystem WindowSystem = new("UNO");
@@ -119,28 +119,27 @@ public unsafe class Plugin : IDalamudPlugin
 
     public void ConnectToServer()
     {
-        
+        Services.Log.Information("connecting to server");
         var builder = new ConfigurationBuilder()
                       .SetBasePath(Services.PluginInterface.GetPluginConfigDirectory())
                       .AddJsonFile("appsettings.json", 
                                    optional: true, reloadOnChange: true);
         
         
-        
-        Services.Log.Information($"{Services.PluginInterface.GetPluginLocDirectory()}");
-        Services.Log.Information($"{Services.PluginInterface.GetPluginConfigDirectory()}");
+        Services.Log.Information($"Dalamud dir loc: {Services.PluginInterface.GetPluginLocDirectory()}");
+        Services.Log.Information($"Dalamud dir:{Services.PluginInterface.GetPluginConfigDirectory()}");
         
         if (builder == null)
         {
             Services.Log.Information("Dis bitch null");
         }
         
-        Services.Log.Information($"{Directory.GetCurrentDirectory()}");
+        Services.Log.Information($"C# dir: {Directory.GetCurrentDirectory()}");
 
 
         var configuration = builder.Build();
         
-        Services.Log.Information($"{configuration}");
+        Services.Log.Information($"config: {configuration}");
         
         var ip = configuration["AppSettings:ServerIP"];
 
@@ -149,14 +148,12 @@ public unsafe class Plugin : IDalamudPlugin
             client = new TcpClient(ip, 6347);
             Stream = client.GetStream();
             buffer = new byte[1024];
-            BServer = true;
         }
         catch (Exception e)
         {
             Services.Log.Information("Uno Server was unresponsive. It might be down...");
             throw;
         }
-        
 
     }
     
@@ -197,7 +194,7 @@ public unsafe class Plugin : IDalamudPlugin
     
     public void ReceiveMessage()
     {
-        if (!BServer || Stream == null)
+        if (!ConnectedToServer || Stream == null)
         {
             return;
         }
@@ -225,55 +222,51 @@ public unsafe class Plugin : IDalamudPlugin
         var commandArgument = message[1..];
         
         var route = (MessageTypeReceive)(commandByte); 
-        /*
+        
         switch (route)
         {
             //  Ping = 00
             case MessageTypeReceive.Ping:
-                Ping();
-                break ;
-            case MessageTypeReceive.Ping:
-                Ping();
-                break ;
+                ReceivePing();
+                break;
             //  Login = 01
             case MessageTypeReceive.Login:
-
-                break ;
+                ReceiveLogin(commandArgument);
+                break;
             //  Logout = 02
             case MessageTypeReceive.Logout:
-
-                break ;
+                ReceiveLogout();
+                break;
             //  StartGame = 03
             case MessageTypeReceive.StartGame:
-
-                break ;
+                ReceiveStartGame(commandArgument);
+                break;
             //  EndGame = 04
             case MessageTypeReceive.EndGame:
-
-                break ;
+                ReceiveEndGame(commandArgument);
+                break;
             //  JoinRoom = 05
             case MessageTypeReceive.JoinRoom:
-
-                break ;
+                ReceiveJoinRoom(commandArgument);
+                break;
             //  LeaveRoom = 06
             case MessageTypeReceive.LeaveRoom:
-                CurrentRoomId = null;
-                break ;
+                ReceiveLeaveRoom(commandArgument);
+                break;
             //  UpdateRoom = 07
             case MessageTypeReceive.UpdateRoom:
-
-                break ;
+                
+                break;
             //  Error = 99
             case MessageTypeReceive.Error:
                 HandleErrorMsg(commandArgument);
-                break ;
+                break;
             default:
                 Services.Log.Information("Invalid Response received.");
                 break;
 
-
         }
-        */
+        
     }
 
     
@@ -315,10 +308,10 @@ public unsafe class Plugin : IDalamudPlugin
      *         Commands        *
      ***************************/
     
-    /*
-    public String Ping()
+    //  This is called in Delegates.cs (OnFrameworkTick)
+    public void SendPing()
     {
-        if (!BServer)
+        if (!ConnectedToServer)
         {
             Services.Log.Information("Plugin::Ping():: ");
             return;
@@ -326,64 +319,120 @@ public unsafe class Plugin : IDalamudPlugin
         
         if (client == null)
         {
-            Services.Log.Information("Delegates::PingServer(): Server is null....Please let me know");
-            BServer = false;
+            Services.Log.Information("Delegates::SendPing(): Server is null....Please let me know");
+            ConnectedToServer = false;
             return;
         }
         
         if (LastPingReceived.Second >= 240) 
         {
-            BPing = true; 
-            SendMsg(0.ToString()); 
+            Ping = true; 
+            SendMsg(ResponseType(MessageTypeSend.Ping, ""));
+            LastPingSent = DateTime.Now;
         }
 
-        if (BPing) { BPing = false; }
+        if (Ping) { Ping = false; }
     }
 
-    public void Pong()
+    //  Handles pings sent by the server (aka pong).
+    public void ReceivePing()
     {
         LastPingReceived = DateTime.Now;
     }
     
-    public string StartGame(string command)
+    //  This fires once connected to server.
+    public void SendLogin()
+    {
+        ConnectToServer();
+        
+        SendMsg(Plugin.ResponseType(MessageTypeSend.Login, $"{XivName}"));
+        
+    }
+    
+    //  This fires once connected to server.
+    public void ReceiveLogin(string command)
+    {
+        ConnectedToServer = true;
+        Services.Chat.Print($"${command}");
+    }
+
+    //  Tells server to remove client as an active client.
+    public void SendLogout()
+    {
+        LastPingReceived = DateTime.Now;
+    }
+    
+    //  Server removed client.
+    public void ReceiveLogout()
+    {
+        LastPingReceived = DateTime.Now;
+    }
+    
+    
+    public string SendStartGame(string command)
     {
         return "StartGame was entered";
     }
     
-    public string EndGame(string command)
+    public string ReceiveStartGame(string command)
+    {
+        return "StartGame was entered";
+    }
+    
+    public string SendEndGame(string command)
     {
         return "EndGame was entered";
     }
     
-    public string JoinRoom(string command)
+    public string ReceiveEndGame(string command)
     {
-
-       
+        return "EndGame was entered";
     }
     
-    public string CreateRoom(string command)
+    public void SendCreateRoom(string maxPlayers)
     {
-        
+        SendMsg(ResponseType(MessageTypeSend.CreateRoom, $"{UnoInterface.maxPlayers}"));
+        Services.Chat.Print($"[UNO]: Creating new Room...");
     }
     
-    public string LeaveRoom(string command)
+    //  Tells server user is joining an active room.
+    public void SendJoinRoom(string command)
     {
-        
+        SendMsg(ResponseType(MessageTypeSend.JoinRoom, $"{UnoInterface.typedRoomId}"));
+        Services.Chat.Print($"[UNO]: Attempting to join room: {command}");
+    }
+    
+    //  This only fires if the client successfully joins a room.
+    public void ReceiveJoinRoom(string command)
+    {
+        CurrentRoomId = int.Parse(command);
+        Services.Chat.Print($"[UNO]: Joined Room: {command}");
+    }
+    
+    //  Tells the server to remove client.
+    public void SendLeaveRoom()
+    {
+        SendMsg(ResponseType(MessageTypeSend.LeaveRoom, $"{UnoInterface.typedRoomId}"));
+        Services.Chat.Print($"[UNO]:Attempting to leave room: {CurrentRoomId}");
+    }
+    
+    public void ReceiveLeaveRoom(string command)
+    {
+        CurrentRoomId = null;
+        Services.Chat.Print($"[UNO]: Left room: {command}");
     }
 
-    private void HandleErrorMsg(string message)
+    private static void HandleErrorMsg(string message)
     {
         Services.Log.Information($"[ERROR]: {message[1..]}");
         Services.Chat.PrintError("[UNO]: Error response received from server. Please check xllog (/xllog) for error message.");
     }
     
     
-    public string CommandType(MessageTypeSend r, string message)
+    public static string ResponseType(MessageTypeSend r, string message)
     {
         return $"{(int)r:D2}" + message;
     }
-    
-    */
     
     
     

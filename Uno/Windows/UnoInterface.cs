@@ -46,9 +46,9 @@ public unsafe class UnoInterface: Window, IDisposable
 
     private Vector4 connectBuuttonTextColor;
     private string connectBuuttonText;
-
-    private int typedRoomId;
-    private int maxPlayers;
+    
+    public int typedRoomId;     //  This is the RoomID the player types. not the actual ID of the room the player is in.
+    public int maxPlayers;
     
     public UnoSettings UnoSettings;
     
@@ -119,12 +119,12 @@ public unsafe class UnoInterface: Window, IDisposable
     //  UI for Uno Tab
     private void UnoTab()
     {
-        using var id = ImRaii.PushId("Uno");
+        using var id = ImRaii.PushId("Uno###");
         ImGuiUtil.HoverTooltip("Uno Tab");
         
         ImGui.BeginChild("Uno");
 
-        if (!plugin.BServer)
+        if (!plugin.ConnectedToServer)
         { 
             connectBuuttonTextColor = new Vector4(1, 0, 0, 1);
             connectBuuttonText = "Connect";
@@ -138,31 +138,26 @@ public unsafe class UnoInterface: Window, IDisposable
         ImGui.PushStyleColor(ImGuiCol.Text, connectBuuttonTextColor);
         if (ImGui.Button(connectBuuttonText, new Vector2(100, 30)))
         {
-            plugin.ConnectToServer();
-
-            if (plugin.BServer)
-            {
-                //plugin.SendMsg(plugin.CommandType(MessageTypeSend.Login, $"{plugin.XivName}"));
-            }
+            plugin.SendLogin();
         }
         ImGui.PopStyleColor();
         
         ImGui.SetCursorPos(new Vector2(((ImGui.GetWindowWidth() / 3) * 2) - 100, 20));
         ImGui.SetNextItemWidth(100);
-        ImGui.InputInt("roomid###", ref typedRoomId, 0);
+        ImGui.InputInt("Room ID###", ref typedRoomId, 0);
         
         
-        ImGui.SetCursorPos(new Vector2(((ImGui.GetWindowWidth() / 3) * 2) + 100, 20));
+        ImGui.SetCursorPos(new Vector2(((ImGui.GetWindowWidth() / 3) * 2) + 75, 20));
         if (ImGui.Button("Join Room"))
         {
-           // plugin.SendMsg(plugin.CommandType(MessageTypeSend.JoinRoom, $"{typedRoomId}"));
-            Services.Log.Information("Sent Join Room to Server");
+           plugin.SendJoinRoom(typedRoomId.ToString());
+           Services.Log.Information("Sent Join Room to Server");
         }
         
-        ImGui.SetCursorPos(new Vector2(((ImGui.GetWindowWidth() / 3) * 2) + 200, 20));
+        ImGui.SetCursorPos(new Vector2(((ImGui.GetWindowWidth() / 3) * 2) + 150, 20));
         if (ImGui.Button("Create Room"))
         {
-            //plugin.SendMsg(plugin.CommandType(MessageTypeSend.CreateRoom, $"{4.ToString()}"));
+            plugin.SendCreateRoom(4.ToString());
             Services.Log.Information("Sent Create room to Server");
         }
         

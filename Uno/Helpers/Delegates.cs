@@ -29,10 +29,12 @@ public class Delegates
     {
         plugin.HandleDeltaTime();
         
-        if (plugin is { Stream: { DataAvailable: true }, BServer: true })
+        if (plugin is { Stream: { DataAvailable: true }, ConnectedToServer: true })
         {
             plugin.ReceiveMessage();
-            //plugin.Ping();
+            
+            //  Change this to HandlePing func that keeps up with both sent and received pings.
+            plugin.SendPing();
         }
         
         
