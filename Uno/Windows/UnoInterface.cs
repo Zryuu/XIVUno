@@ -161,10 +161,22 @@ public unsafe class UnoInterface: Window, IDisposable
             Services.Log.Information("Sent Create room to Server");
         }
         
+        ImGui.SetCursorPos(new Vector2(((ImGui.GetWindowWidth() / 3) * 2) - 100, 50));
+        ImGui.Text("Players:");
+        DisplayPlayers();
+        
         ImGui.EndChild();
 
     }
 
+    public void DisplayPlayers()
+    {
+        foreach (var player in plugin.CurrentPlayersInRoom)
+        {
+            ImGui.Text($"{player}");
+        }
+    }
+    
     //  UI for Settings Tab
     private void SettingsTab()
     {

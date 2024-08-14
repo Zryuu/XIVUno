@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Net.Sockets;
 using System.Text;
@@ -65,6 +66,7 @@ public unsafe class Plugin : IDalamudPlugin
     private DateTime LastPingSent { get; set; }
     private DateTime LastPingReceived { get; set; }
     public int? CurrentRoomId { get; set; }
+    public List<string> CurrentPlayersInRoom = new List<string>();
 
     public float DeltaTime;
     
@@ -257,7 +259,7 @@ public unsafe class Plugin : IDalamudPlugin
                 break;
             //  UpdateRoom = 07
             case MessageTypeReceive.UpdateRoom:
-                
+                ReceiveUpdateRoom(commandArgument);
                 break;
             //  Error = 99
             case MessageTypeReceive.Error:
@@ -454,6 +456,18 @@ public unsafe class Plugin : IDalamudPlugin
         CurrentRoomId = null;
         UnoInterface.typedRoomId = 0;
         Services.Chat.Print($"[UNO]: Left room: {command}");
+    }
+    
+    public void ReceiveUpdateRoom(string command)
+    {
+        var parts = command.Split(";");
+
+        CurrentPlayersInRoom.RemoveRange(0, CurrentPlayersInRoom.Count);
+        
+        foreach (var part in parts)
+        {
+            CurrentPlayersInRoom.Add(part);
+        }
     }
 
     private static void HandleErrorMsg(string message)
