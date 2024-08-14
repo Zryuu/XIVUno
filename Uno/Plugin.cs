@@ -143,8 +143,6 @@ public unsafe class Plugin : IDalamudPlugin
         Services.Log.Information($"{configuration}");
         
         var ip = configuration["AppSettings:ServerIP"];
-        
-        Services.Log.Information($"IP: {ip}");
 
         try
         {
