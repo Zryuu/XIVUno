@@ -488,6 +488,8 @@ public unsafe class Plugin : IDalamudPlugin
         {
             CurrentPlayersInRoom.Add(part);
         }
+        
+        
     }
 
     private static void HandleErrorMsg(string message)

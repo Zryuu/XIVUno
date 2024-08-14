@@ -179,12 +179,6 @@ public unsafe class UnoInterface: Window, IDisposable
         
         foreach (var player in plugin.CurrentPlayersInRoom)
         {
-
-            if (plugin.CurrentPlayersInRoom.Contains(player))
-            {
-                continue;
-            }
-            
             ImGui.PushID("playername###");
             ImGui.SetCursorPosX(((ImGui.GetWindowWidth() / 3) * 2) - 100);
             ImGui.Text($"{player}");
