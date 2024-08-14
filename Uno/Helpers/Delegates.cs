@@ -34,7 +34,7 @@ public class Delegates
             plugin.ReceiveMessage();
             
             //  Change this to HandlePing func that keeps up with both sent and received pings.
-            plugin.SendPing();
+            plugin.HandlePings();
         }
         
         

@@ -58,6 +58,7 @@ public unsafe class Plugin : IDalamudPlugin
     public NetworkStream? Stream;
     public byte[] buffer;
     public int bytesRead;
+    public int AfkTimer = 500;
     
     public string XivName { get; set; }
     private bool BInUnoGame { get; set; }
@@ -236,7 +237,7 @@ public unsafe class Plugin : IDalamudPlugin
                 break;
             //  Logout = 02
             case MessageTypeReceive.Logout:
-                ReceiveLogout();
+                ReceiveLogout(commandArgument);
                 break;
             //  StartGame = 03
             case MessageTypeReceive.StartGame:
@@ -341,6 +342,34 @@ public unsafe class Plugin : IDalamudPlugin
         LastPingReceived = DateTime.Now;
     }
     
+    //  This func handles all pings, sent and received, as well as logging out if the server doesnt respond to a ping.
+    public void HandlePings()
+    {
+        //  If LastPingReceived is > AfkTimer
+        if (LastPingReceived.Second - DateTime.Now.Second >= AfkTimer)
+        {
+            Services.Chat.PrintError("[UNO]: Server timed out, Disconnecting...Check log (/xllog)");
+            Services.Log.Information("Last ping received was over 5mins ago...Pong never received.");
+            SendLogout();
+            ConnectedToServer = false;
+        }
+        
+        //  If LastPingSent is > AfkTimer
+        if (LastPingSent.Second - DateTime.Now.Second >= AfkTimer)
+        {
+            Services.Chat.PrintError("[UNO]: Client can't reach server, Disconnecting...Check log (/xllog)");
+            Services.Log.Information("Last ping sent was over 5mins ago...Client isn't sending Pings to server.");
+            SendLogout();
+            ConnectedToServer = false;
+        }
+
+        //  If LastPingSent is 100 seconds from AfkTimer.
+        if (LastPingSent.Second >= AfkTimer - 100)
+        {
+            SendPing();
+        }
+    }
+    
     //  This fires once connected to server.
     public void SendLogin()
     {
@@ -360,13 +389,15 @@ public unsafe class Plugin : IDalamudPlugin
     //  Tells server to remove client as an active client.
     public void SendLogout()
     {
-        LastPingReceived = DateTime.Now;
+        Services.Chat.Print($"[UNO]: Disconnecting from server...");
+        SendMsg(ResponseType(MessageTypeSend.Logout, $""));
     }
     
     //  Server removed client.
-    public void ReceiveLogout()
+    public void ReceiveLogout(string command)
     {
-        LastPingReceived = DateTime.Now;
+        ConnectedToServer = false;
+        Services.Chat.Print($"[UNO]: {command}");
     }
     
     
@@ -407,6 +438,7 @@ public unsafe class Plugin : IDalamudPlugin
     public void ReceiveJoinRoom(string command)
     {
         CurrentRoomId = int.Parse(command);
+        UnoInterface.typedRoomId = (int)CurrentRoomId;
         Services.Chat.Print($"[UNO]: Joined Room: {command}");
     }
     
@@ -420,6 +452,7 @@ public unsafe class Plugin : IDalamudPlugin
     public void ReceiveLeaveRoom(string command)
     {
         CurrentRoomId = null;
+        UnoInterface.typedRoomId = 0;
         Services.Chat.Print($"[UNO]: Left room: {command}");
     }
 
