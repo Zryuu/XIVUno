@@ -148,6 +148,7 @@ public unsafe class Plugin : IDalamudPlugin
             client = new TcpClient(ip, 6347);
             Stream = client.GetStream();
             buffer = new byte[1024];
+            ConnectedToServer = true;
         }
         catch (Exception e)
         {
@@ -219,7 +220,7 @@ public unsafe class Plugin : IDalamudPlugin
         }
         
         var commandByte = int.Parse(message.Substring(0, 2));
-        var commandArgument = message[1..];
+        var commandArgument = message[2..];
         
         var route = (MessageTypeReceive)(commandByte); 
         
@@ -353,7 +354,7 @@ public unsafe class Plugin : IDalamudPlugin
     public void ReceiveLogin(string command)
     {
         ConnectedToServer = true;
-        Services.Chat.Print($"${command}");
+        Services.Chat.Print($"{command}");
     }
 
     //  Tells server to remove client as an active client.
