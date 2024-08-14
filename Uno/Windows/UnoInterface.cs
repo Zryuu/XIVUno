@@ -155,14 +155,14 @@ public unsafe class UnoInterface: Window, IDisposable
         ImGui.SetCursorPos(new Vector2(((ImGui.GetWindowWidth() / 3) * 2) + 100, 20));
         if (ImGui.Button("Join Room"))
         {
-            plugin.SendMsg($"{6}{typedRoomId}");
+            plugin.SendMsg(plugin.CommandType(MessageTypeSend.JoinRoom, $"{typedRoomId}"));
             Services.Log.Information("Sent Join Room to Server");
         }
         
         ImGui.SetCursorPos(new Vector2(((ImGui.GetWindowWidth() / 3) * 2) + 200, 20));
         if (ImGui.Button("Create Room"))
         {
-            plugin.SendMsg($"{5.ToString()}{4}");
+            plugin.SendMsg(plugin.CommandType(MessageTypeSend.CreateRoom, $"{4.ToString()}"));
             Services.Log.Information("Sent Create room to Server");
         }
         

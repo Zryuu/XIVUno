@@ -215,7 +215,7 @@ public unsafe class Plugin : IDalamudPlugin
             string response = Encoding.ASCII.GetString(buffer, 0, bytesRead);
             ReceiveCommand(response);
             
-            Services.Log.Information($"Received: {response}");
+            Services.Log.Information($"Received: {response[2..]}");
         }
     }
     
@@ -260,7 +260,7 @@ public unsafe class Plugin : IDalamudPlugin
                 break ;
             //  LeaveRoom = 06
             case MessageTypeReceive.LeaveRoom:
-                
+                CurrentRoomId = null;
                 break ;
             //  UpdateRoom = 07
             case MessageTypeReceive.UpdateRoom:
@@ -315,10 +315,7 @@ public unsafe class Plugin : IDalamudPlugin
     
     public string CommandType(MessageTypeSend r, string message)
     {
-        var response = $"{(int)r:D2}" + message;
-        Services.Log.Information($"Message: {message}");
-        Services.Log.Information($"Response: {response}");
-        return response;
+        return $"{(int)r:D2}" + message;
     }
     
     private void DrawUI() => WindowSystem.Draw();
