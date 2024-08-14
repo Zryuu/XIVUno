@@ -16,7 +16,7 @@
     <PropertyGroup>
         <DalamudLibPath>$(AppData)\XIVLauncher\addon\Hooks\dev\</DalamudLibPath>
     </PropertyGroup>
-
+    
     <ItemGroup>
         <ProjectReference Include="..\..\Tools\OtterGui\OtterGui.csproj" /> 
     </ItemGroup>
