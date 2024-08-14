@@ -200,6 +200,7 @@ public unsafe class Plugin : IDalamudPlugin
     {
         if (!ConnectedToServer || Stream == null)
         {
+            Services.Log.Information("Server not connected.");
             return;
         }
         
@@ -425,7 +426,7 @@ public unsafe class Plugin : IDalamudPlugin
     
     public void SendCreateRoom(string maxPlayers)
     {
-        SendMsg(ResponseType(MessageTypeSend.CreateRoom, $"{UnoInterface.maxPlayers}"));
+        SendMsg(ResponseType(MessageTypeSend.CreateRoom, $"{4.ToString()}"));
         Services.Chat.Print($"[UNO]: Creating new Room...");
     }
     
@@ -439,6 +440,22 @@ public unsafe class Plugin : IDalamudPlugin
     //  This only fires if the client successfully joins a room.
     public void ReceiveJoinRoom(string command)
     {
+        
+        /*
+        var parts = command.Split("|");
+        var part = parts[0];
+        var playerNames = parts[1];
+
+        var players = playerNames.Split(";");
+
+
+        foreach (var player in players)
+        {
+            CurrentPlayersInRoom.Add(player);
+            Services.Log.Information($"Players: {player} added.");
+        }
+        */
+        
         CurrentRoomId = int.Parse(command);
         UnoInterface.typedRoomId = (int)CurrentRoomId;
         Services.Chat.Print($"[UNO]: Joined Room: {command}");
@@ -455,6 +472,9 @@ public unsafe class Plugin : IDalamudPlugin
     {
         CurrentRoomId = null;
         UnoInterface.typedRoomId = 0;
+        
+        CurrentPlayersInRoom.RemoveRange(0, CurrentPlayersInRoom.Count);
+        
         Services.Chat.Print($"[UNO]: Left room: {command}");
     }
     

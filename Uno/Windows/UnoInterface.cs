@@ -171,10 +171,27 @@ public unsafe class UnoInterface: Window, IDisposable
 
     public void DisplayPlayers()
     {
+
+        if (plugin.CurrentPlayersInRoom.Count < 1)
+        {
+            //Services.Log.Information("It was 0");
+        }
+        
         foreach (var player in plugin.CurrentPlayersInRoom)
         {
+
+            if (plugin.CurrentPlayersInRoom.Contains(player))
+            {
+                continue;
+            }
+            
+            ImGui.PushID("playername###");
+            ImGui.SetCursorPosX(((ImGui.GetWindowWidth() / 3) * 2) - 100);
             ImGui.Text($"{player}");
         }
+        
+        
+        
     }
     
     //  UI for Settings Tab
