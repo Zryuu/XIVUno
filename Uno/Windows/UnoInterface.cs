@@ -142,7 +142,7 @@ public unsafe class UnoInterface: Window, IDisposable
 
             if (plugin.BServer)
             {
-                plugin.SendMsg(plugin.CommandType(MessageTypeSend.Login, $"{plugin.XivName}"));
+                //plugin.SendMsg(plugin.CommandType(MessageTypeSend.Login, $"{plugin.XivName}"));
             }
         }
         ImGui.PopStyleColor();
@@ -155,14 +155,14 @@ public unsafe class UnoInterface: Window, IDisposable
         ImGui.SetCursorPos(new Vector2(((ImGui.GetWindowWidth() / 3) * 2) + 100, 20));
         if (ImGui.Button("Join Room"))
         {
-            plugin.SendMsg(plugin.CommandType(MessageTypeSend.JoinRoom, $"{typedRoomId}"));
+           // plugin.SendMsg(plugin.CommandType(MessageTypeSend.JoinRoom, $"{typedRoomId}"));
             Services.Log.Information("Sent Join Room to Server");
         }
         
         ImGui.SetCursorPos(new Vector2(((ImGui.GetWindowWidth() / 3) * 2) + 200, 20));
         if (ImGui.Button("Create Room"))
         {
-            plugin.SendMsg(plugin.CommandType(MessageTypeSend.CreateRoom, $"{4.ToString()}"));
+            //plugin.SendMsg(plugin.CommandType(MessageTypeSend.CreateRoom, $"{4.ToString()}"));
             Services.Log.Information("Sent Create room to Server");
         }
         

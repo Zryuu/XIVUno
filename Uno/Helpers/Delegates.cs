@@ -32,7 +32,7 @@ public class Delegates
         if (plugin is { Stream: { DataAvailable: true }, BServer: true })
         {
             plugin.ReceiveMessage();
-            plugin.Ping();
+            //plugin.Ping();
         }
         
         

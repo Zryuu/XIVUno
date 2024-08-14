@@ -13,8 +13,12 @@
     <LangVersion>preview</LangVersion>
   </PropertyGroup>
 
+    <PropertyGroup>
+        <DalamudLibPath>$(AppData)\XIVLauncher\addon\Hooks\dev\</DalamudLibPath>
+    </PropertyGroup>
+
     <ItemGroup>
-        <ProjectReference Include="..\..\Tools\OtterGui\OtterGui.csproj" />
+        <ProjectReference Include="..\..\Tools\OtterGui\OtterGui.csproj" /> 
     </ItemGroup>
     
     <ItemGroup>
@@ -23,9 +27,4 @@
       <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="9.0.0-preview.6.24327.7" />
     </ItemGroup>
     
-    <ItemGroup>
-      <EmbeddedResource Include="appsettings.json">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      </EmbeddedResource>
-    </ItemGroup>
 </Project>
