@@ -46,7 +46,6 @@ public unsafe class UnoInterface: Window, IDisposable
     
     public int typedRoomId;     //  This is the RoomID the player types. not the actual ID of the room the player is in.
     public int maxPlayers;
-    public int startingHand;
     
     public UnoSettings UnoSettings;
     
@@ -139,7 +138,7 @@ public unsafe class UnoInterface: Window, IDisposable
         
         ImGui.BeginChild("Uno");
         
-        
+        //  Not Connected to Server.
         if (!plugin.ConnectedToServer)
         { 
             var color = new Vector4(1, 0, 0, 1);
@@ -163,8 +162,10 @@ public unsafe class UnoInterface: Window, IDisposable
             ImGui.PopStyleColor();
             
         }
+        //  Connected to Server.
         else
         {
+            //  Connected to Room
             if (plugin.CurrentRoomId != null)
             {
                 ImGui.SetCursorPosX(1156);
@@ -175,6 +176,7 @@ public unsafe class UnoInterface: Window, IDisposable
                     plugin.SendLeaveRoom();
                 }
             }
+            //  Not Connected to Server
             else
             {
                 ImGui.SetCursorPos(new Vector2(((ImGui.GetWindowWidth() / 3) * 2) - 100, 20));
@@ -289,14 +291,20 @@ public unsafe class UnoInterface: Window, IDisposable
             }
             ImGui.EndCombo();
         }
-        
-        //  Send Settings
-        const string buttonText = "Connect to Server";
-        var textSize = ImGui.CalcTextSize(buttonText);
-        ImGui.SetCursorPos(new Vector2(1156, 500));
-        if (ImGui.Button("Send Settings", textSize with { Y = 25 }))
+        ImGuiUtil.HoverTooltip("Changes the host of the room.");
+
+        //  Send Settings. Only appears if Host.
+        if (plugin.Host)
         {
-            //plugin.SendRoomSettings();
+            const string buttonText = "Apply Settings";
+            var textSize = ImGui.CalcTextSize(buttonText);
+            ImGui.SetCursorPos(new Vector2(1156, 500));
+            if (ImGui.Button("Apply Settings", textSize with { Y = 25 }))
+            {
+                //  Format {maxPlayers};{NewHost}. using ; as seperator
+                plugin.SendRoomSettings($"{maxPlayers};{selectedPlayer}");
+            }
+            ImGuiUtil.HoverTooltip("Applies Room Settings to all players.");
         }
     }
 

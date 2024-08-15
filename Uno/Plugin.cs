@@ -58,8 +58,15 @@ public unsafe class Plugin : IDalamudPlugin
     public bool ConnectedToServer { get; set; }
     public bool Ping { get; set; }
     
+    //  Server Vars
     internal MessageTypeSend MessageTypeSend;
     internal MessageTypeReceive MessageTypeReceive;
+    private DateTime LastPingSent { get; set; }
+    private DateTime LastPingReceived { get; set; }
+    public int? CurrentRoomId { get; set; }
+    public List<string> CurrentPlayersInRoom = new List<string>();
+    
+    // TCP vars
     
     public TcpClient? Client;
     public NetworkStream? Stream;
@@ -67,12 +74,12 @@ public unsafe class Plugin : IDalamudPlugin
     public int BytesRead;
     public int AfkTimer = 500;
     
-    public string XivName { get; set; }
+    //  Uno Vars
     private bool BInUnoGame { get; set; }
-    private DateTime LastPingSent { get; set; }
-    private DateTime LastPingReceived { get; set; }
-    public int? CurrentRoomId { get; set; }
-    public List<string> CurrentPlayersInRoom = new List<string>();
+    public bool Host = false;
+    
+    //  XIV Vars
+    public string XivName { get; set; }
 
     public float DeltaTime;
     
@@ -269,7 +276,7 @@ public unsafe class Plugin : IDalamudPlugin
                 HandleErrorMsg(commandArgument);
                 break;
             case MessageTypeReceive.RoomSettings:
-                
+                ReceiveRoomSettings(commandArgument);
                 break;
             default:
                 Services.Log.Information("Invalid Response received.");
@@ -445,9 +452,19 @@ public unsafe class Plugin : IDalamudPlugin
     //  This only fires if the client successfully joins a room.
     public void ReceiveJoinRoom(string command)
     {
-        CurrentRoomId = int.Parse(command);
+        var parts = command.Split(";");
+        var id = parts[0];
+        var host = parts[1];
+        
+        CurrentRoomId = int.Parse(id);
         UnoInterface.typedRoomId = (int)CurrentRoomId;
-        Services.Chat.Print($"[UNO]: Joined Room: {command}");
+
+        if (host == XivName)
+        {
+            Host = true;
+        }
+        
+        Services.Chat.Print($"[UNO]: Joined Room: {id}");
     }
     
     //  Tells the server to remove client.
@@ -457,16 +474,20 @@ public unsafe class Plugin : IDalamudPlugin
         Services.Chat.Print($"[UNO]:Attempting to leave room: {CurrentRoomId}");
     }
     
+    //  This only fires if the client successfully leaves a room.
     public void ReceiveLeaveRoom(string command)
     {
         CurrentRoomId = null;
         UnoInterface.typedRoomId = 0;
         
         CurrentPlayersInRoom.RemoveRange(0, CurrentPlayersInRoom.Count);
+
+        Host = false;
         
         Services.Chat.Print($"[UNO]: Left room: {command}");
     }
     
+    //  Gets updated list of players in room.
     public void ReceiveUpdateRoom(string command)
     {
         var parts = command.Split(";");
@@ -479,15 +500,28 @@ public unsafe class Plugin : IDalamudPlugin
         }
     }
 
+    //  Tells server Room Settings.
     public void SendRoomSettings(string command)
     {
         SendMsg(ResponseType(MessageTypeSend.RoomSettings, $"{command}"));
-        Services.Chat.Print($"[UNO]: Attempting to join room: {command}");
+        Services.Chat.Print($"[UNO]: Applying settings, waiting for server response....");
     }
     
+    //  Gets Room Settings from Server.
     public void ReceiveRoomSettings(string command)
     {
+        var parts = command.Split(";");
+        var newMaxPlayers = int.Parse(parts[0]);
+        var newHost = parts[1];
+
+        UnoInterface.maxPlayers = newMaxPlayers;
         
+        if (newHost == XivName)
+        {
+            Host = true;
+        }
+        
+        Services.Chat.Print($"[UNO]: Settings accepted. Room Settings applied.");
     }
     
     private static void HandleErrorMsg(string message)
