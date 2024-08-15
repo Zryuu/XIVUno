@@ -5,7 +5,7 @@
         "Punchline": "Play Uno with friends",
         "Description": "Its Uno",
         "InternalName": "Uno",
-        "AssemblyVersion": "0.0.3",
+        "AssemblyVersion": "0.0.4",
         "RepoUrl": "https://github.com/Zryuu/XIVUno",
         "ApplicableVersion": "any",
         "DalamudApiLevel": 10,
