@@ -169,6 +169,11 @@ public unsafe class UnoInterface: Window, IDisposable
             {
                 ImGui.SetCursorPosX(1156);
                 DrawUnoTabs();
+
+                if (ImGui.Button("Leave room", new Vector2(ImGui.CalcTextSize("Leave room").X, 30)))
+                {
+                    plugin.SendLeaveRoom();
+                }
             }
             else
             {

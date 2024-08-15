@@ -445,22 +445,6 @@ public unsafe class Plugin : IDalamudPlugin
     //  This only fires if the client successfully joins a room.
     public void ReceiveJoinRoom(string command)
     {
-        
-        /*
-        var parts = command.Split("|");
-        var part = parts[0];
-        var playerNames = parts[1];
-
-        var players = playerNames.Split(";");
-
-
-        foreach (var player in players)
-        {
-            CurrentPlayersInRoom.Add(player);
-            Services.Log.Information($"Players: {player} added.");
-        }
-        */
-        
         CurrentRoomId = int.Parse(command);
         UnoInterface.typedRoomId = (int)CurrentRoomId;
         Services.Chat.Print($"[UNO]: Joined Room: {command}");
