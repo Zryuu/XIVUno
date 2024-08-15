@@ -138,11 +138,11 @@ public unsafe class Plugin : IDalamudPlugin
         {
             var json = reader.ReadToEnd();
             var jObject = JObject.Parse(json);
-            serverIp = jObject["AppSettings:ServerIP"]?.ToString();
+            serverIp = jObject["AppSettings"]?["ServerIP"]?.ToString();
             
         }
 
-        if (serverIp != null)
+        if (!string.IsNullOrEmpty(serverIp))
         {
             try
             {
