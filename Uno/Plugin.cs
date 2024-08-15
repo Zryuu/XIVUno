@@ -24,7 +24,9 @@ public enum MessageTypeSend
     EndGame,
     CreateRoom,
     JoinRoom,
-    LeaveRoom
+    LeaveRoom,
+    UpdateRoom,
+    RoomSettings
 }
 
 //  CommandBytes received from Server
@@ -38,6 +40,7 @@ public enum MessageTypeReceive
     JoinRoom,
     LeaveRoom,
     UpdateRoom,
+    RoomSettings,
     Error = 99
 }
 
@@ -55,10 +58,10 @@ public unsafe class Plugin : IDalamudPlugin
     internal MessageTypeSend MessageTypeSend;
     internal MessageTypeReceive MessageTypeReceive;
     
-    public TcpClient? client;
+    public TcpClient? Client;
     public NetworkStream? Stream;
-    public byte[] buffer;
-    public int bytesRead;
+    public byte[] Buffer;
+    public int BytesRead;
     public int AfkTimer = 500;
     
     public string XivName { get; set; }
@@ -94,14 +97,14 @@ public unsafe class Plugin : IDalamudPlugin
 
         Services.GameInteropProvider.InitializeFromAttributes(this);
 
-        Services.PluginInterface.UiBuilder.Draw += DrawUI;
+        Services.PluginInterface.UiBuilder.Draw += DrawUi;
 
         // This adds a button to the plugin installer entry of this plugin which allows
         // to toggle the display status of the configuration ui
-        Services.PluginInterface.UiBuilder.OpenConfigUi += ToggleConfigUI;
+        Services.PluginInterface.UiBuilder.OpenConfigUi += ToggleConfigUi;
 
         // Adds another button that is doing the same but for the main ui of the plugin
-        Services.PluginInterface.UiBuilder.OpenMainUi += ToggleMainUI;
+        Services.PluginInterface.UiBuilder.OpenMainUi += ToggleMainUi;
         
         SaveLocPlayer();
     }
@@ -148,9 +151,9 @@ public unsafe class Plugin : IDalamudPlugin
 
         try
         {
-            client = new TcpClient(ip, 6347);
-            Stream = client.GetStream();
-            buffer = new byte[1024];
+            Client = new TcpClient(ip, 6347);
+            Stream = Client.GetStream();
+            Buffer = new byte[1024];
             ConnectedToServer = true;
         }
         catch (Exception e)
@@ -204,11 +207,11 @@ public unsafe class Plugin : IDalamudPlugin
             return;
         }
         
-        byte[] buffer = new byte[1024]; // Buffer for incoming data
-        int bytesRead = Stream.Read(buffer, 0, buffer.Length);
+        var buffer = new byte[1024]; // Buffer for incoming data
+        var bytesRead = Stream.Read(buffer, 0, buffer.Length);
         if (bytesRead > 0)
         {
-            string response = Encoding.ASCII.GetString(buffer, 0, bytesRead);
+            var response = Encoding.ASCII.GetString(buffer, 0, bytesRead);
             ReceiveCommand(response);
             
             Services.Log.Information($"Received: {response[2..]}");
@@ -266,6 +269,9 @@ public unsafe class Plugin : IDalamudPlugin
             case MessageTypeReceive.Error:
                 HandleErrorMsg(commandArgument);
                 break;
+            case MessageTypeReceive.RoomSettings:
+                
+                break;
             default:
                 Services.Log.Information("Invalid Response received.");
                 break;
@@ -285,7 +291,7 @@ public unsafe class Plugin : IDalamudPlugin
     // Sends data to uno server
     public void SendMsgUnsafe(byte[] message)
     {
-        if (client == null)
+        if (Client == null)
             throw new InvalidOperationException("Server is null");
         
         Stream!.Write(message, 0, message.Length);
@@ -322,7 +328,7 @@ public unsafe class Plugin : IDalamudPlugin
             return;
         }
         
-        if (client == null)
+        if (Client == null)
         {
             Services.Log.Information("Delegates::SendPing(): Server is null....Please let me know");
             ConnectedToServer = false;
@@ -488,17 +494,24 @@ public unsafe class Plugin : IDalamudPlugin
         {
             CurrentPlayersInRoom.Add(part);
         }
-        
-        
     }
 
+    public void SendRoomSettings(string command)
+    {
+        SendMsg(ResponseType(MessageTypeSend.RoomSettings, $"{command}"));
+        Services.Chat.Print($"[UNO]: Attempting to join room: {command}");
+    }
+    
+    public void ReceiveRoomSettings(string command)
+    {
+        
+    }
+    
     private static void HandleErrorMsg(string message)
     {
         Services.Log.Information($"[ERROR]: {message[1..]}");
         Services.Chat.PrintError("[UNO]: Error response received from server. Please check xllog (/xllog) for error message.");
     }
-    
-    
     public static string ResponseType(MessageTypeSend r, string message)
     {
         return $"{(int)r:D2}" + message;
@@ -507,9 +520,9 @@ public unsafe class Plugin : IDalamudPlugin
     
     
     
-    private void DrawUI() => WindowSystem.Draw();
-    public void ToggleConfigUI() => ConfigWindow.Toggle();
-    public void ToggleMainUI() => UnoInterface.Toggle();
+    private void DrawUi() => WindowSystem.Draw();
+    public void ToggleConfigUi() => ConfigWindow.Toggle();
+    public void ToggleMainUi() => UnoInterface.Toggle();
     
     
 
