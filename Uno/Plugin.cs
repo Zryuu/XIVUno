@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Net.Sockets;
+using System.Reflection;
 using System.Text;
 using Dalamud.IoC;
 using Dalamud.Plugin;
@@ -9,6 +10,8 @@ using Dalamud.Game.ClientState.Objects.SubKinds;
 using Dalamud.Interface.Windowing;
 using FFXIVClientStructs.FFXIV.Client.Game.Group;
 using Microsoft.Extensions.Configuration;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using Uno.Helpers;
 using Uno.Windows;
 
@@ -126,42 +129,38 @@ public unsafe class Plugin : IDalamudPlugin
     public void ConnectToServer()
     {
         Services.Log.Information("connecting to server");
-        var builder = new ConfigurationBuilder()
-                      .SetBasePath(Services.PluginInterface.GetPluginConfigDirectory())
-                      .AddJsonFile("appsettings.json", 
-                                   optional: true, reloadOnChange: true);
-        
-        
-        Services.Log.Information($"Dalamud dir loc: {Services.PluginInterface.GetPluginLocDirectory()}");
-        Services.Log.Information($"Dalamud dir:{Services.PluginInterface.GetPluginConfigDirectory()}");
-        
-        if (builder == null)
-        {
-            Services.Log.Information("Dis bitch null");
-        }
-        
-        Services.Log.Information($"C# dir: {Directory.GetCurrentDirectory()}");
+        var assembly = Assembly.GetExecutingAssembly();
+        const string resourceName = "Uno.appsettings.json";
 
-
-        var configuration = builder.Build();
-        
-        Services.Log.Information($"config: {configuration}");
-        
-        var ip = configuration["AppSettings:ServerIP"];
-
-        try
+        string? serverIp;
+        using (var stream = assembly.GetManifestResourceStream(resourceName))
+        using (var reader = new StreamReader(stream!))
         {
-            Client = new TcpClient(ip, 6347);
-            Stream = Client.GetStream();
-            Buffer = new byte[1024];
-            ConnectedToServer = true;
-        }
-        catch (Exception e)
-        {
-            Services.Log.Information("Uno Server was unresponsive. It might be down...");
-            throw;
+            var json = reader.ReadToEnd();
+            var jObject = JObject.Parse(json);
+            serverIp = jObject["AppSettings:ServerIP"]?.ToString();
+            
         }
 
+        if (serverIp != null)
+        {
+            try
+            {
+                Client = new TcpClient(serverIp, 6347);
+                Stream = Client.GetStream();
+                Buffer = new byte[1024];
+                ConnectedToServer = true;
+            }
+            catch (Exception e)
+            {
+                Services.Log.Information("Uno Server was unresponsive. It might be down...");
+                throw;
+            }
+        }
+        else
+        {
+            Services.Log.Information("[ERROR]: Json object null.");
+        }
     }
     
     

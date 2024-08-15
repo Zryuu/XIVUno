@@ -27,4 +27,11 @@
       <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="9.0.0-preview.6.24327.7" />
     </ItemGroup>
     
+    <ItemGroup>
+      <None Remove="appsettings.json" />
+      <EmbeddedResource Include="appsettings.json">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </EmbeddedResource>
+    </ItemGroup>
+    
 </Project>

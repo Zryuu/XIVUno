@@ -206,7 +206,7 @@ public unsafe class UnoInterface: Window, IDisposable
         
         foreach (var player in plugin.CurrentPlayersInRoom)
         {
-            ImGui.PushID("playername###");
+            ImGui.PushID("player Name###");
             ImGui.SetCursorPosX(((ImGui.GetWindowWidth() / 3) * 2) - 100);
             ImGui.Text($"{player}");
         }
@@ -288,7 +288,6 @@ public unsafe class UnoInterface: Window, IDisposable
         //  Send Settings
         const string buttonText = "Connect to Server";
         var textSize = ImGui.CalcTextSize(buttonText);
-        
         ImGui.SetCursorPos(new Vector2(1156, 500));
         if (ImGui.Button("Send Settings", textSize with { Y = 25 }))
         {
