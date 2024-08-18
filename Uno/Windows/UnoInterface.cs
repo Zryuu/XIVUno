@@ -79,6 +79,17 @@ public unsafe class UnoInterface: Window, IDisposable
             case "Sven Grimore" or "Sven Grimore":
                 ImGuiUtil.HoverTooltip("Waiting for quote");
                 break;
+            
+            
+            
+            
+            
+            case "Ben Gibson" or "Alacea Na'Sha" or "Alacea Na'Sha" or "Sho Nan" or "Bao Sen":
+                ImGuiUtil.HoverTooltip("This name makes me think you've read my favorite book series." +
+                                       "\nIf you know who Azarin's Sister's name or Ben's wife's name," +
+                                       "\nMessage me on Discord and I'll add you and give you a special name in the plugin." +
+                                       "\nYou can find me in the Dalamud's Discord with my GitHub name");
+                break;
         }
     }
     
@@ -206,6 +217,26 @@ public unsafe class UnoInterface: Window, IDisposable
                 ImGui.SetCursorPos(new Vector2(((ImGui.GetWindowWidth() / 3) * 2) + 150, 20));
                 if (ImGui.Button("Create Room"))
                 {
+                    var password = "";
+                    ImGui.BeginChildFrame(ImGui.GetID("CreateRoomPassword"),  new Vector2(300, 300));
+
+                    if (ImGui.Button("Create"))
+                    {
+                        if (password.Length != 4)
+                        {
+                            
+                        }
+                    }
+                    ImGui.SameLine();
+                    ImGui.Indent(100);
+
+                    if (ImGui.Button("Cancel"))
+                    {
+                        ImGui.EndChildFrame();
+                        ImGui.CloseCurrentPopup();
+                        return;
+                    }
+                    ImGui.EndChildFrame();
                     plugin.SendCreateRoom(4.ToString());
                     Services.Log.Information("Sent Create room to Server");
                 }
