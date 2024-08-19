@@ -461,7 +461,7 @@ public unsafe class Plugin : IDalamudPlugin
     //  Tells server user is joining an active room.
     public void SendJoinRoom(string command)
     {
-        SendMsg(ResponseType(MessageTypeSend.JoinRoom, $"{UnoInterface.TypedRoomId}"));
+        SendMsg(ResponseType(MessageTypeSend.JoinRoom, $"{UnoInterface.TypedRoomId};{UnoInterface.RoomPassword}"));
         Services.Chat.Print($"[UNO]: Attempting to join room: {command}");
     }
     
