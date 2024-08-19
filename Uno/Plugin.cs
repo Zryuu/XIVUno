@@ -79,7 +79,7 @@ public unsafe class Plugin : IDalamudPlugin
     
     //  Uno Vars
     private bool BInUnoGame { get; set; }
-    public bool Host = false;
+    public bool Host;
     
     //  XIV Vars
     public string XivName { get; set; }
