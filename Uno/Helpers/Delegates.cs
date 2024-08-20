@@ -1,10 +1,6 @@
-﻿using System.Collections.Generic;
-using Dalamud.Game.Text;
-using Dalamud.Game.Text.SeStringHandling;
-using Dalamud.Plugin.Services;
-using Uno.Windows;
+﻿using Dalamud.Plugin.Services;
 
-//  THIS FILE HOLDS ALL FUNCTIONS THAT ARE SUBSCRIBED TO A DELEGATE.
+//  THIS FILE HANDLES ALL FUNCTIONS THAT ARE SUBSCRIBED TO A DELEGATE.
 
 namespace Uno.Helpers;
 
@@ -28,16 +24,18 @@ public class Delegates
     public void OnFrameworkTick(IFramework framework)
     {
         plugin.HandleDeltaTime();
-        
-        if (plugin is { Stream: { DataAvailable: true }, ConnectedToServer: true })
+
+        if (plugin.ConnectedToServer)
         {
-            plugin.ReceiveMessage();
-            
-            //  Change this to HandlePing func that keeps up with both sent and received pings.
             plugin.HandlePings();
+            plugin.LastPingSent += plugin.DeltaTime;
+            plugin.LastPingReceived += plugin.DeltaTime;
         }
         
-        
+        if (plugin is { Stream: { DataAvailable: true }})
+        {
+            plugin.ReceiveMessage();
+        }
     }
     
     //  Fires on Login

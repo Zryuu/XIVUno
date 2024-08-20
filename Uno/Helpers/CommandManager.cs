@@ -34,6 +34,6 @@ public class CommandManager
             Services.CommandManager.RemoveHandler(command);
     }
     
-    private void UnoCi(string command, string args) { plugin.ToggleMainUI(); }
+    private void UnoCi(string command, string args) { plugin.ToggleMainUi(); }
     
 }

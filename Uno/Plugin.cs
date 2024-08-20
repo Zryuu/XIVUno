@@ -1,14 +1,16 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Net.Sockets;
+using System.Reflection;
 using System.Text;
 using Dalamud.IoC;
 using Dalamud.Plugin;
 using Dalamud.Game.ClientState.Objects.SubKinds;
 using Dalamud.Interface.Windowing;
 using FFXIVClientStructs.FFXIV.Client.Game.Group;
-using Microsoft.Extensions.Configuration;
+using Newtonsoft.Json.Linq;
 using Uno.Helpers;
 using Uno.Windows;
 
@@ -24,7 +26,11 @@ public enum MessageTypeSend
     EndGame,
     CreateRoom,
     JoinRoom,
-    LeaveRoom
+    LeaveRoom,
+    UpdateRoom,
+    RoomSettings,
+    UpdateHost,
+    KickPlayer,
 }
 
 //  CommandBytes received from Server
@@ -38,6 +44,9 @@ public enum MessageTypeReceive
     JoinRoom,
     LeaveRoom,
     UpdateRoom,
+    RoomSettings,
+    UpdateHost,
+    KickPlayer,
     Error = 99
 }
 
@@ -52,21 +61,28 @@ public unsafe class Plugin : IDalamudPlugin
     public bool ConnectedToServer { get; set; }
     public bool Ping { get; set; }
     
+    //  Server Vars
     internal MessageTypeSend MessageTypeSend;
     internal MessageTypeReceive MessageTypeReceive;
-    
-    public TcpClient? client;
-    public NetworkStream? Stream;
-    public byte[] buffer;
-    public int bytesRead;
-    public int AfkTimer = 500;
-    
-    public string XivName { get; set; }
-    private bool BInUnoGame { get; set; }
-    private DateTime LastPingSent { get; set; }
-    private DateTime LastPingReceived { get; set; }
+    public float LastPingSent { get; set; }
+    public float LastPingReceived { get; set; }
     public int? CurrentRoomId { get; set; }
     public List<string> CurrentPlayersInRoom = new List<string>();
+    
+    // TCP vars
+    
+    public TcpClient? Client;
+    public NetworkStream? Stream;
+    public byte[] Buffer;
+    public int BytesRead;
+    public int AfkTimer = 300; //   5Mins
+    
+    //  Uno Vars
+    private bool BInUnoGame { get; set; }
+    public bool Host;
+    
+    //  XIV Vars
+    public string XivName { get; set; }
 
     public float DeltaTime;
     
@@ -94,14 +110,14 @@ public unsafe class Plugin : IDalamudPlugin
 
         Services.GameInteropProvider.InitializeFromAttributes(this);
 
-        Services.PluginInterface.UiBuilder.Draw += DrawUI;
+        Services.PluginInterface.UiBuilder.Draw += DrawUi;
 
         // This adds a button to the plugin installer entry of this plugin which allows
         // to toggle the display status of the configuration ui
-        Services.PluginInterface.UiBuilder.OpenConfigUi += ToggleConfigUI;
+        Services.PluginInterface.UiBuilder.OpenConfigUi += ToggleConfigUi;
 
         // Adds another button that is doing the same but for the main ui of the plugin
-        Services.PluginInterface.UiBuilder.OpenMainUi += ToggleMainUI;
+        Services.PluginInterface.UiBuilder.OpenMainUi += ToggleMainUi;
         
         SaveLocPlayer();
     }
@@ -123,42 +139,38 @@ public unsafe class Plugin : IDalamudPlugin
     public void ConnectToServer()
     {
         Services.Log.Information("connecting to server");
-        var builder = new ConfigurationBuilder()
-                      .SetBasePath(Services.PluginInterface.GetPluginConfigDirectory())
-                      .AddJsonFile("appsettings.json", 
-                                   optional: true, reloadOnChange: true);
-        
-        
-        Services.Log.Information($"Dalamud dir loc: {Services.PluginInterface.GetPluginLocDirectory()}");
-        Services.Log.Information($"Dalamud dir:{Services.PluginInterface.GetPluginConfigDirectory()}");
-        
-        if (builder == null)
-        {
-            Services.Log.Information("Dis bitch null");
-        }
-        
-        Services.Log.Information($"C# dir: {Directory.GetCurrentDirectory()}");
+        var assembly = Assembly.GetExecutingAssembly();
+        const string resourceName = "Uno.appsettings.json";
 
-
-        var configuration = builder.Build();
-        
-        Services.Log.Information($"config: {configuration}");
-        
-        var ip = configuration["AppSettings:ServerIP"];
-
-        try
+        string? serverIp;
+        using (var stream = assembly.GetManifestResourceStream(resourceName))
+        using (var reader = new StreamReader(stream!))
         {
-            client = new TcpClient(ip, 6347);
-            Stream = client.GetStream();
-            buffer = new byte[1024];
-            ConnectedToServer = true;
-        }
-        catch (Exception e)
-        {
-            Services.Log.Information("Uno Server was unresponsive. It might be down...");
-            throw;
+            var json = reader.ReadToEnd();
+            var jObject = JObject.Parse(json);
+            serverIp = jObject["AppSettings"]?["ServerIP"]?.ToString();
+            
         }
 
+        if (!string.IsNullOrEmpty(serverIp))
+        {
+            try
+            {
+                Client = new TcpClient(serverIp, 6347);
+                Stream = Client.GetStream();
+                Buffer = new byte[1024];
+                ConnectedToServer = true;
+            }
+            catch (Exception e)
+            {
+                Services.Log.Information("Uno Server was unresponsive. It might be down...");
+                throw;
+            }
+        }
+        else
+        {
+            Services.Log.Information("[ERROR]: Json object null.");
+        }
     }
     
     
@@ -204,11 +216,11 @@ public unsafe class Plugin : IDalamudPlugin
             return;
         }
         
-        byte[] buffer = new byte[1024]; // Buffer for incoming data
-        int bytesRead = Stream.Read(buffer, 0, buffer.Length);
+        var buffer = new byte[1024]; // Buffer for incoming data
+        var bytesRead = Stream.Read(buffer, 0, buffer.Length);
         if (bytesRead > 0)
         {
-            string response = Encoding.ASCII.GetString(buffer, 0, bytesRead);
+            var response = Encoding.ASCII.GetString(buffer, 0, bytesRead);
             ReceiveCommand(response);
             
             Services.Log.Information($"Received: {response[2..]}");
@@ -262,6 +274,19 @@ public unsafe class Plugin : IDalamudPlugin
             case MessageTypeReceive.UpdateRoom:
                 ReceiveUpdateRoom(commandArgument);
                 break;
+            //  RoomSettings = 08
+            case MessageTypeReceive.RoomSettings:
+                ReceiveRoomSettings(commandArgument);
+                break;
+            //  UpdateHost = 09
+            case MessageTypeReceive.UpdateHost:
+                ReceiveUpdateHost(commandArgument);
+                break;
+            //  KickPlayer = 10
+            case MessageTypeReceive.KickPlayer:
+                ReceiveKickPlayer(commandArgument);
+                break;
+            
             //  Error = 99
             case MessageTypeReceive.Error:
                 HandleErrorMsg(commandArgument);
@@ -285,7 +310,7 @@ public unsafe class Plugin : IDalamudPlugin
     // Sends data to uno server
     public void SendMsgUnsafe(byte[] message)
     {
-        if (client == null)
+        if (Client == null)
             throw new InvalidOperationException("Server is null");
         
         Stream!.Write(message, 0, message.Length);
@@ -318,23 +343,19 @@ public unsafe class Plugin : IDalamudPlugin
     {
         if (!ConnectedToServer)
         {
-            Services.Log.Information("Plugin::Ping():: ");
+            Services.Log.Information("Tried to send Ping while not connected to server");
             return;
         }
         
-        if (client == null)
+        if (Client == null)
         {
-            Services.Log.Information("Delegates::SendPing(): Server is null....Please let me know");
+            Services.Log.Information("Server is null....Please let me know");
             ConnectedToServer = false;
             return;
         }
-        
-        if (LastPingReceived.Second >= 240) 
-        {
-            Ping = true; 
-            SendMsg(ResponseType(MessageTypeSend.Ping, ""));
-            LastPingSent = DateTime.Now;
-        }
+
+        SendMsg(ResponseType(MessageTypeSend.Ping, XivName));
+        LastPingSent = 0;
 
         if (Ping) { Ping = false; }
     }
@@ -342,34 +363,39 @@ public unsafe class Plugin : IDalamudPlugin
     //  Handles pings sent by the server (aka pong).
     public void ReceivePing()
     {
-        LastPingReceived = DateTime.Now;
+        LastPingReceived = 0;
     }
     
     //  This func handles all pings, sent and received, as well as logging out if the server doesnt respond to a ping.
     public void HandlePings()
     {
+        
         //  If LastPingReceived is > AfkTimer
-        if (LastPingReceived.Second - DateTime.Now.Second >= AfkTimer)
+        if (LastPingReceived >= AfkTimer)
         {
             Services.Chat.PrintError("[UNO]: Server timed out, Disconnecting...Check log (/xllog)");
             Services.Log.Information("Last ping received was over 5mins ago...Pong never received.");
             SendLogout();
             ConnectedToServer = false;
+            return;
         }
         
         //  If LastPingSent is > AfkTimer
-        if (LastPingSent.Second - DateTime.Now.Second >= AfkTimer)
+        if (LastPingSent >= AfkTimer)
         {
             Services.Chat.PrintError("[UNO]: Client can't reach server, Disconnecting...Check log (/xllog)");
             Services.Log.Information("Last ping sent was over 5mins ago...Client isn't sending Pings to server.");
             SendLogout();
             ConnectedToServer = false;
+            return;
         }
 
         //  If LastPingSent is 100 seconds from AfkTimer.
-        if (LastPingSent.Second >= AfkTimer - 100)
+        // ReSharper disable once PossibleLossOfFraction
+        if (LastPingSent >= AfkTimer - (AfkTimer / 5))
         {
             SendPing();
+            Services.Log.Information("Sent Ping");
         }
     }
     
@@ -378,8 +404,8 @@ public unsafe class Plugin : IDalamudPlugin
     {
         ConnectToServer();
         
-        SendMsg(Plugin.ResponseType(MessageTypeSend.Login, $"{XivName}"));
-        
+        SendMsg(ResponseType(MessageTypeSend.Login, $"{XivName}"));
+        LastPingSent = 0;
     }
     
     //  This fires once connected to server.
@@ -387,6 +413,8 @@ public unsafe class Plugin : IDalamudPlugin
     {
         ConnectedToServer = true;
         Services.Chat.Print($"{command}");
+        
+        LastPingReceived = 0;
     }
 
     //  Tells server to remove client as an active client.
@@ -433,51 +461,49 @@ public unsafe class Plugin : IDalamudPlugin
     //  Tells server user is joining an active room.
     public void SendJoinRoom(string command)
     {
-        SendMsg(ResponseType(MessageTypeSend.JoinRoom, $"{UnoInterface.typedRoomId}"));
+        SendMsg(ResponseType(MessageTypeSend.JoinRoom, $"{UnoInterface.TypedRoomId};{UnoInterface.RoomPassword}"));
         Services.Chat.Print($"[UNO]: Attempting to join room: {command}");
     }
     
     //  This only fires if the client successfully joins a room.
     public void ReceiveJoinRoom(string command)
     {
+        var parts = command.Split(";");
+        var id = parts[0];
+        var host = parts[1];
         
-        /*
-        var parts = command.Split("|");
-        var part = parts[0];
-        var playerNames = parts[1];
+        CurrentRoomId = int.Parse(id);
+        UnoInterface.TypedRoomId = (int)CurrentRoomId;
 
-        var players = playerNames.Split(";");
-
-
-        foreach (var player in players)
+        if (host == XivName)
         {
-            CurrentPlayersInRoom.Add(player);
-            Services.Log.Information($"Players: {player} added.");
+            Host = true;
         }
-        */
         
-        CurrentRoomId = int.Parse(command);
-        UnoInterface.typedRoomId = (int)CurrentRoomId;
-        Services.Chat.Print($"[UNO]: Joined Room: {command}");
+        Services.Chat.Print($"[UNO]: Joined Room: {id}");
     }
     
     //  Tells the server to remove client.
     public void SendLeaveRoom()
     {
-        SendMsg(ResponseType(MessageTypeSend.LeaveRoom, $"{UnoInterface.typedRoomId}"));
+        SendMsg(ResponseType(MessageTypeSend.LeaveRoom, $"{UnoInterface.TypedRoomId}"));
         Services.Chat.Print($"[UNO]:Attempting to leave room: {CurrentRoomId}");
     }
     
+    //  This only fires if the client successfully leaves a room.
     public void ReceiveLeaveRoom(string command)
     {
         CurrentRoomId = null;
-        UnoInterface.typedRoomId = 0;
+        UnoInterface.TypedRoomId = 0;
         
         CurrentPlayersInRoom.RemoveRange(0, CurrentPlayersInRoom.Count);
+
+        Host = false;
         
         Services.Chat.Print($"[UNO]: Left room: {command}");
     }
     
+    //  Gets updated list of players in room.
     public void ReceiveUpdateRoom(string command)
     {
         var parts = command.Split(";");
@@ -486,19 +512,79 @@ public unsafe class Plugin : IDalamudPlugin
         
         foreach (var part in parts)
         {
+
+            if (part == parts.First())
+            {
+                var s = part;
+                s = "\u2606 " + part;
+                CurrentPlayersInRoom.Add(s);
+                continue;
+            }
+
             CurrentPlayersInRoom.Add(part);
         }
-        
-        
     }
 
+    //  Tells server Room Settings.
+    public void SendRoomSettings(string command)
+    {
+        SendMsg(ResponseType(MessageTypeSend.RoomSettings, $"{command}"));
+        Services.Chat.Print($"[UNO]: Applying settings, waiting for server response....");
+    }
+    
+    //  Gets Room Settings from Server.
+    public void ReceiveRoomSettings(string command)
+    {
+        var parts = command.Split(";");
+        var newMaxPlayers = int.Parse(parts[0]);
+        var newHost = parts[1];
+
+        UnoInterface.MaxPlayers = newMaxPlayers;
+        
+        if (newHost == XivName)
+        {
+            Host = true;
+        }
+        
+        Services.Chat.Print($"[UNO]: Settings accepted. Room Settings applied.");
+    }
+
+    public void ReceiveKickPlayer(string command)
+    {
+        if (CurrentRoomId == null)
+        {
+            return;
+        }
+        
+        if (XivName != command)
+        {
+            Services.Chat.Print($"[UNO]: {command} was kicked from the room");
+        }
+
+        ReceiveLeaveRoom(CurrentRoomId.ToString()!);
+    }
+
+    public void ReceiveUpdateHost(string command)
+    {
+        if (CurrentRoomId == null)
+        {
+            return;
+        }
+        
+        if (command == XivName)
+        {
+            Host = true;
+            Services.Chat.Print($"[UNO]: You were promoted to room's host.");
+            return;
+        }
+        Services.Chat.Print($"[UNO]: {command} is now the host of the room.");
+    }
+    
     private static void HandleErrorMsg(string message)
     {
         Services.Log.Information($"[ERROR]: {message[1..]}");
         Services.Chat.PrintError("[UNO]: Error response received from server. Please check xllog (/xllog) for error message.");
     }
-    
-    
     public static string ResponseType(MessageTypeSend r, string message)
     {
         return $"{(int)r:D2}" + message;
@@ -507,9 +593,9 @@ public unsafe class Plugin : IDalamudPlugin
     
     
     
-    private void DrawUI() => WindowSystem.Draw();
-    public void ToggleConfigUI() => ConfigWindow.Toggle();
-    public void ToggleMainUI() => UnoInterface.Toggle();
+    private void DrawUi() => WindowSystem.Draw();
+    public void ToggleConfigUi() => ConfigWindow.Toggle();
+    public void ToggleMainUi() => UnoInterface.Toggle();
     
     
 
