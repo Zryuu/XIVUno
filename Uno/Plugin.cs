@@ -16,7 +16,7 @@ using Uno.Windows;
 
 namespace Uno;
 
-//  CommandBytes sent to Server
+//  CommandBytes sent to Server.
 public enum MessageTypeSend
 {
     Ping = 0,
