@@ -234,69 +234,80 @@ public unsafe class Plugin : IDalamudPlugin
             Services.Log.Information($"Received empty response from server: {message}");
             return;
         }
-        
-        var commandByte = int.Parse(message.Substring(0, 2));
-        var commandArgument = message[2..];
-        
-        var route = (MessageTypeReceive)(commandByte); 
-        
-        switch (route)
-        {
-            //  Ping = 00
-            case MessageTypeReceive.Ping:
-                ReceivePing();
-                break;
-            //  Login = 01
-            case MessageTypeReceive.Login:
-                ReceiveLogin(commandArgument);
-                break;
-            //  Logout = 02
-            case MessageTypeReceive.Logout:
-                ReceiveLogout(commandArgument);
-                break;
-            //  StartGame = 03
-            case MessageTypeReceive.StartGame:
-                ReceiveStartGame(commandArgument);
-                break;
-            //  EndGame = 04
-            case MessageTypeReceive.EndGame:
-                ReceiveEndGame(commandArgument);
-                break;
-            //  JoinRoom = 05
-            case MessageTypeReceive.JoinRoom:
-                ReceiveJoinRoom(commandArgument);
-                break;
-            //  LeaveRoom = 06
-            case MessageTypeReceive.LeaveRoom:
-                ReceiveLeaveRoom(commandArgument);
-                break;
-            //  UpdateRoom = 07
-            case MessageTypeReceive.UpdateRoom:
-                ReceiveUpdateRoom(commandArgument);
-                break;
-            //  RoomSettings = 08
-            case MessageTypeReceive.RoomSettings:
-                ReceiveRoomSettings(commandArgument);
-                break;
-            //  UpdateHost = 09
-            case MessageTypeReceive.UpdateHost:
-                ReceiveUpdateHost(commandArgument);
-                break;
-            //  KickPlayer = 10
-            case MessageTypeReceive.KickPlayer:
-                ReceiveKickPlayer(commandArgument);
-                break;
-            
-            //  Error = 99
-            case MessageTypeReceive.Error:
-                HandleErrorMsg(commandArgument);
-                break;
-            default:
-                Services.Log.Information("Invalid Response received.");
-                break;
 
-        }
+        var commands = message.Split("\n");
+
+        foreach (var command in commands)
+        {
+            if (command.Length < 2)
+            {
+                continue;
+            }
         
+            var commandByte = int.Parse(command.Substring(0, 2));
+            var commandArgument = command[2..];
+            
+            Services.Log.Information($"Byte: {commandByte} | command: {commandArgument}");
+            
+            var route = (MessageTypeReceive)(commandByte); 
+            
+            switch (route)
+            {
+                //  Ping = 00
+                case MessageTypeReceive.Ping:
+                    ReceivePing();
+                    break;
+                //  Login = 01
+                case MessageTypeReceive.Login:
+                    ReceiveLogin(commandArgument);
+                    break;
+                //  Logout = 02
+                case MessageTypeReceive.Logout:
+                    ReceiveLogout(commandArgument);
+                    break;
+                //  StartGame = 03
+                case MessageTypeReceive.StartGame:
+                    ReceiveStartGame(commandArgument);
+                    break;
+                //  EndGame = 04
+                case MessageTypeReceive.EndGame:
+                    ReceiveEndGame(commandArgument);
+                    break;
+                //  JoinRoom = 05
+                case MessageTypeReceive.JoinRoom:
+                    ReceiveJoinRoom(commandArgument);
+                    break;
+                //  LeaveRoom = 06
+                case MessageTypeReceive.LeaveRoom:
+                    ReceiveLeaveRoom(commandArgument);
+                    break;
+                //  UpdateRoom = 07
+                case MessageTypeReceive.UpdateRoom:
+                    ReceiveUpdateRoom(commandArgument);
+                    break;
+                //  RoomSettings = 08
+                case MessageTypeReceive.RoomSettings:
+                    ReceiveRoomSettings(commandArgument);
+                    break;
+                //  UpdateHost = 09
+                case MessageTypeReceive.UpdateHost:
+                    ReceiveUpdateHost(commandArgument);
+                    break;
+                //  KickPlayer = 10
+                case MessageTypeReceive.KickPlayer:
+                    ReceiveKickPlayer(commandArgument);
+                    break;
+                
+                //  Error = 99
+                case MessageTypeReceive.Error:
+                    HandleErrorMsg(commandArgument);
+                    break;
+                default:
+                    Services.Log.Information("Invalid Response received.");
+                    break;
+
+            }
+        }
     }
 
     
@@ -317,7 +328,7 @@ public unsafe class Plugin : IDalamudPlugin
     }
     
     //  Gets message ready to send to Server. Converts string to Byte[].
-    public unsafe void SendMsg(string message)
+    public void SendMsg(string message)
     {
         var messageBytes = Encoding.ASCII.GetBytes(message);
         
@@ -369,24 +380,29 @@ public unsafe class Plugin : IDalamudPlugin
     //  This func handles all pings, sent and received, as well as logging out if the server doesnt respond to a ping.
     public void HandlePings()
     {
+        //  idk why this was still running when this bool was false.....This brute forces a fix.
+        if (!ConnectedToServer)
+        {
+            return;
+        }
         
         //  If LastPingReceived is > AfkTimer
         if (LastPingReceived >= AfkTimer)
         {
+            ConnectedToServer = false;
             Services.Chat.PrintError("[UNO]: Server timed out, Disconnecting...Check log (/xllog)");
             Services.Log.Information("Last ping received was over 5mins ago...Pong never received.");
             SendLogout();
-            ConnectedToServer = false;
             return;
         }
         
         //  If LastPingSent is > AfkTimer
         if (LastPingSent >= AfkTimer)
         {
+            ConnectedToServer = false;
             Services.Chat.PrintError("[UNO]: Client can't reach server, Disconnecting...Check log (/xllog)");
             Services.Log.Information("Last ping sent was over 5mins ago...Client isn't sending Pings to server.");
             SendLogout();
-            ConnectedToServer = false;
             return;
         }
 
@@ -452,16 +468,16 @@ public unsafe class Plugin : IDalamudPlugin
         return "EndGame was entered";
     }
     
-    public void SendCreateRoom(string maxPlayers)
+    public void SendCreateRoom(string command)
     {
-        SendMsg(ResponseType(MessageTypeSend.CreateRoom, $"{4.ToString()}"));
+        SendMsg(ResponseType(MessageTypeSend.CreateRoom, $"{command}"));
         Services.Chat.Print($"[UNO]: Creating new Room...");
     }
     
     //  Tells server user is joining an active room.
     public void SendJoinRoom(string command)
     {
-        SendMsg(ResponseType(MessageTypeSend.JoinRoom, $"{UnoInterface.TypedRoomId};{UnoInterface.RoomPassword}"));
+        SendMsg(ResponseType(MessageTypeSend.JoinRoom, $"{command}"));
         Services.Chat.Print($"[UNO]: Attempting to join room: {command}");
     }
     
@@ -473,6 +489,7 @@ public unsafe class Plugin : IDalamudPlugin
         var host = parts[1];
         
         CurrentRoomId = int.Parse(id);
+        Services.Log.Information($"ID var: {CurrentRoomId}");
         UnoInterface.TypedRoomId = (int)CurrentRoomId;
 
         if (host == XivName)
@@ -486,7 +503,7 @@ public unsafe class Plugin : IDalamudPlugin
     //  Tells the server to remove client.
     public void SendLeaveRoom()
     {
-        SendMsg(ResponseType(MessageTypeSend.LeaveRoom, $"{UnoInterface.TypedRoomId}"));
+        SendMsg(ResponseType(MessageTypeSend.LeaveRoom, $"{CurrentRoomId}"));
         Services.Chat.Print($"[UNO]:Attempting to leave room: {CurrentRoomId}");
     }
     
@@ -506,13 +523,15 @@ public unsafe class Plugin : IDalamudPlugin
     //  Gets updated list of players in room.
     public void ReceiveUpdateRoom(string command)
     {
+        
         var parts = command.Split(";");
 
         CurrentPlayersInRoom.RemoveRange(0, CurrentPlayersInRoom.Count);
         
         foreach (var part in parts)
         {
-
+            
+            /*
             if (part == parts.First())
             {
                 var s = part;
@@ -520,7 +539,7 @@ public unsafe class Plugin : IDalamudPlugin
                 CurrentPlayersInRoom.Add(s);
                 continue;
             }
-
+            */
             CurrentPlayersInRoom.Add(part);
         }
     }
@@ -582,7 +601,7 @@ public unsafe class Plugin : IDalamudPlugin
     
     private static void HandleErrorMsg(string message)
     {
-        Services.Log.Information($"[ERROR]: {message[1..]}");
+        Services.Log.Information($"[ERROR]: {message}");
         Services.Chat.PrintError("[UNO]: Error response received from server. Please check xllog (/xllog) for error message.");
     }
     public static string ResponseType(MessageTypeSend r, string message)

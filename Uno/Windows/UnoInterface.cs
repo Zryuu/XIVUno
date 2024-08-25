@@ -46,7 +46,11 @@ public unsafe class UnoInterface: Window, IDisposable
     
     public int TypedRoomId;     //  This is the RoomID the player types. not the actual ID of the room the player is in.
     public int MaxPlayers;
-    public string RoomPassword;
+    public string RoomPassword = "";
+
+    public bool ShowJoinRoomWindow = false;
+    public bool ShowCreateRoomWindow = false;
+    public bool RoomPrivate;
     
     public UnoSettings UnoSettings;
     
@@ -69,7 +73,7 @@ public unsafe class UnoInterface: Window, IDisposable
     }
 
     //  This is a joke and will prob get taken out later or put into an external json file
-    public void FunnyQuote(string player)
+    public static void FunnyQuote(string player)
     {
         switch (player)
         {
@@ -156,6 +160,86 @@ public unsafe class UnoInterface: Window, IDisposable
         }
         
     }
+
+    private void CreateRoomChildWindow()
+    {
+        
+        ImGui.Begin("Create Room", ref ShowCreateRoomWindow, ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoResize);
+
+        if (ImGui.RadioButton("Public", !RoomPrivate))
+        {
+            RoomPrivate = false;
+        }
+        ImGui.Indent(50);
+        ImGui.SameLine();
+        if (ImGui.RadioButton("Private", RoomPrivate))
+        {
+            RoomPrivate = true;
+        }
+        ImGui.Unindent(50);
+        
+        if (RoomPrivate)
+        {
+            ImGui.SetNextItemWidth(100);
+            ImGui.InputText("Password", ref RoomPassword, 4);
+            ImGuiUtil.HoverTooltip("Enter a 4 character password for the room.");
+        }
+        
+        ImGui.Dummy(new Vector2(0, 10));
+                
+        if (ImGui.Button("Create Room###CreateRoomSmallWindow"))
+        {
+            if (RoomPassword.Length != 4 && RoomPrivate)
+            {
+                Services.Chat.PrintError($"[Error]: Password required to be 4 characters.");
+            }
+            else
+            {
+                MaxPlayers = 4;
+                plugin.SendCreateRoom($"{MaxPlayers};{RoomPassword}");
+                Services.Log.Information("Sent Create room to Server");
+                ShowCreateRoomWindow = false;
+            }
+        }
+        ImGui.SameLine();
+        if (ImGui.Button("Cancel###CreateRoomSmallWindow"))
+        {
+            ShowJoinRoomWindow = false;
+        }
+        
+        ImGui.End();
+    }
+    
+    private void JoinRoomChildWindow()
+    {
+        ImGui.Begin("Join Room", ref ShowJoinRoomWindow, ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoResize);
+                    
+        ImGui.SetNextItemWidth(100);
+        ImGui.InputInt("Room ID", ref TypedRoomId, 0);
+        ImGuiUtil.HoverTooltip("ID for the Uno room you're currently in.");
+                
+        ImGui.SetNextItemWidth(100);
+        ImGui.InputText("Room Password", ref RoomPassword, 4);
+        ImGuiUtil.HoverTooltip("Password for the room.");
+                
+        ImGui.Dummy(new Vector2(0, 10));
+        ImGui.Indent(100);
+                
+        if (ImGui.Button("Join Room###JoinRoomSmallWindow"))
+        {
+            plugin.SendJoinRoom($"{TypedRoomId};{RoomPassword}");
+            Services.Log.Information("Sent Join Room to Server");
+            ShowJoinRoomWindow = false;
+        }
+
+        if (ImGui.Button("Cancel"))
+        {
+            ShowJoinRoomWindow = false;
+        }
+                    
+        ImGui.End();
+    }
+    
     
     //  UI for Uno Tab
     private void UnoTab()
@@ -195,50 +279,37 @@ public unsafe class UnoInterface: Window, IDisposable
             //  Connected to Room
             if (plugin.CurrentRoomId != null)
             {
-                ImGui.SetCursorPosX(1156);
+                ImGui.Indent(1156);
                 DrawUnoTabs();
             }
             //  Not Connected to Server
             else
             {
-                ImGui.SetCursorPos(new Vector2(((ImGui.GetWindowWidth() / 3) * 2) - 100, 20));
-                ImGui.SetNextItemWidth(100);
-                ImGui.InputInt("Room ID###", ref TypedRoomId, 0);
-                ImGuiUtil.HoverTooltip("ID for the Uno room you're currently in.");
-        
-        
-                ImGui.SetCursorPos(new Vector2(((ImGui.GetWindowWidth() / 3) * 2) + 75, 20));
-                if (ImGui.Button("Join Room"))
+                if (ShowJoinRoomWindow)
                 {
-                    plugin.SendJoinRoom(TypedRoomId.ToString());
-                    Services.Log.Information("Sent Join Room to Server");
+                    ImGui.SetNextWindowPos(ImGui.GetMousePos(), ImGuiCond.Appearing);
+                    JoinRoomChildWindow();
                 }
-        
-                ImGui.SetCursorPos(new Vector2(((ImGui.GetWindowWidth() / 3) * 2) + 150, 20));
-                if (ImGui.Button("Create Room"))
+
+                if (ShowCreateRoomWindow)
                 {
-                    var password = "";
-                    ImGui.BeginChildFrame(ImGui.GetID("CreateRoomPassword"),  new Vector2(300, 300));
-
-                    if (ImGui.Button("Create"))
-                    {
-                        if (password.Length != 4)
-                        {
-                            
-                        }
-                    }
-                    ImGui.SameLine();
-                    ImGui.Indent(100);
-
-                    if (ImGui.Button("Cancel"))
-                    {
-                        ImGui.EndChildFrame();
-                        ImGui.CloseCurrentPopup();
-                        return;
-                    }
-                    ImGui.EndChildFrame();
-                    plugin.SendCreateRoom(4.ToString());
-                    Services.Log.Information("Sent Create room to Server");
+                    ImGui.SetNextWindowPos(ImGui.GetMousePos(), ImGuiCond.Appearing);
+                    CreateRoomChildWindow();
+                }
+                
+                ImGui.Dummy(new Vector2(0, 25));
+                
+                if (ImGui.Button("Join Room###JoinRoom"))
+                {
+                    ShowJoinRoomWindow = true;
+                }
+                
+                ImGui.Indent(75);
+                ImGui.SameLine();
+                
+                if (ImGui.Button("Create Room###CreateRoom"))
+                {
+                    ShowCreateRoomWindow = true;
                 }
             }
         }
@@ -265,7 +336,6 @@ public unsafe class UnoInterface: Window, IDisposable
         ImGuiUtil.HoverTooltip("List of players present in room.");
         
         ImGui.BeginChild("PlayerList");
-        ImGui.Indent(1156);
         ImGui.BeginTable("Players", 1);
 
         ImGui.TableNextColumn();
@@ -275,13 +345,15 @@ public unsafe class UnoInterface: Window, IDisposable
             ImGui.SetNextItemWidth(size.X + (5 * 2));
 
             //  This should prob be swapped to the server....Though it MAY cause issues since it adds a char to the name...
+            /*
             if (player == plugin.CurrentPlayersInRoom.First())
             {
                 var s = player;
                 s = "\u2606 " + player;
             }
+            */
             
-            if (plugin.Host)
+            if (plugin.Host && player != plugin.XivName)
             {
                 TextElementWithContext(player);
             }
@@ -289,13 +361,12 @@ public unsafe class UnoInterface: Window, IDisposable
             {
                 ImGui.Text(player);
             }
-            FunnyQuote(player);
+            FunnyQuote(player); //  This will get changed with a Json file.
             
             ImGui.TableNextRow();
         }
         
         ImGui.EndTable();
-        ImGui.Unindent(1156);
         ImGui.EndChild();
     }
 
@@ -304,10 +375,6 @@ public unsafe class UnoInterface: Window, IDisposable
         using var id = ImRaii.PushId("RoomSettings###");
         ImGuiUtil.HoverTooltip("Settings for the room.");
         
-        var typedPassword = "";
-
-
-        ImGui.Indent(1156);
         if (ImGui.BeginTable("Room Settings", 2))
         {
             //  Max Players
@@ -316,35 +383,6 @@ public unsafe class UnoInterface: Window, IDisposable
             ImGui.TableNextColumn(); // 1
             ImGui.SetNextItemWidth(100);
             ImGui.InputInt("", ref MaxPlayers, 0);
-            
-            //  Room Password
-            ImGui.TableNextRow();
-            ImGui.TableNextColumn(); // 0
-            ImGui.Text("Room Password");
-            ImGui.TableNextColumn(); // 1
-            if (ImGui.InputText("", ref typedPassword, 4))
-            {
-                if (ImGui.IsItemDeactivatedAfterEdit())
-                {
-                    if (typedPassword.Length != 3)
-                    {
-                        Services.Chat.PrintError("[UNO]: Room passwords have to be 4 characters long. Please enter a new password.");
-                    }
-
-                    RoomPassword = typedPassword;
-                }
-            }
-            ImGuiUtil.HoverTooltip("Password has to be 4 characters long.");
-
-            ImGui.TableNextRow();
-            ImGui.TableNextColumn(); // 0
-            ImGui.TableNextRow();
-            ImGui.TableNextColumn(); // 1
-            ImGui.TableNextRow();
-            ImGui.TableNextColumn(); // 0
-            ImGui.TableNextRow();
-            ImGui.TableNextColumn(); // 1
-            ImGui.TableNextRow();
             
             ImGui.TableNextRow();
             ImGui.TableNextColumn(); // 0
@@ -369,9 +407,12 @@ public unsafe class UnoInterface: Window, IDisposable
                 plugin.SendLeaveRoom();
             }
             
+            ImGui.TableNextColumn();
+            ImGui.TableNextRow();
+            ImGui.Text($"Room ID: {plugin.CurrentRoomId.ToString()}");
+            
             ImGui.EndTable();
         }
-        ImGui.Unindent(1156);
        
     }
 
@@ -387,10 +428,11 @@ public unsafe class UnoInterface: Window, IDisposable
     }
 
     //  Makes a Text Element with a context menu.
-    private static void TextElementWithContext(string name)
+    private void TextElementWithContext(string name)
     {
+        
         ImGui.Text(name);
-
+        
         if (ImGui.BeginPopupContextItem(name+"ContextMenu###"))
         {
             if (ImGui.MenuItem("Kick Player"))
