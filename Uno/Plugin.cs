@@ -10,6 +10,9 @@ using Dalamud.Plugin;
 using Dalamud.Game.ClientState.Objects.SubKinds;
 using Dalamud.Interface.Windowing;
 using FFXIVClientStructs.FFXIV.Client.Game.Group;
+using FFXIVClientStructs.FFXIV.Client.Game.Object;
+using FFXIVClientStructs.FFXIV.Client.UI;
+using FFXIVClientStructs.FFXIV.Component.GUI;
 using Newtonsoft.Json.Linq;
 using Uno.Helpers;
 using Uno.Windows;
@@ -390,9 +393,11 @@ public unsafe class Plugin : IDalamudPlugin
         if (LastPingReceived >= AfkTimer)
         {
             ConnectedToServer = false;
-            Services.Chat.PrintError("[UNO]: Server timed out, Disconnecting...Check log (/xllog)");
-            Services.Log.Information("Last ping received was over 5mins ago...Pong never received.");
+            Services.Chat.PrintError("[UNO]: Server timed out, Disconnected from server. Check log (/xllog) for more info");
+            Services.Log.Information("Last ping received more than 5 minutes ago...Client isn't receiving Pong. " +
+                                     "Try restarting plugin and attempt to connect again after a few minutes.");
             SendLogout();
+            
             return;
         }
         
@@ -400,8 +405,9 @@ public unsafe class Plugin : IDalamudPlugin
         if (LastPingSent >= AfkTimer)
         {
             ConnectedToServer = false;
-            Services.Chat.PrintError("[UNO]: Client can't reach server, Disconnecting...Check log (/xllog)");
-            Services.Log.Information("Last ping sent was over 5mins ago...Client isn't sending Pings to server.");
+            Services.Chat.PrintError("[UNO]: Client timed out, Disconnected from server. Check log (/xllog) for more info");
+            Services.Log.Information("Last ping sent more than 5 minutes ago...Client isn't sending Pings to server." +
+                                     "Try restarting plugin.");
             SendLogout();
             return;
         }

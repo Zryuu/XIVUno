@@ -22,4 +22,5 @@ public class Services {
     [PluginService] public static ICommandManager CommandManager { get; private set; }
     [PluginService] public static IPartyList Party { get; private set; }
     [PluginService] public static IGameInteropProvider GameInteropProvider { get; private set; }
+    [PluginService] public static Configuration Config { get; private set; }
 }
