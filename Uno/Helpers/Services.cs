@@ -1,6 +1,7 @@
 ﻿using Dalamud.IoC;
 using Dalamud.Plugin;
 using Dalamud.Plugin.Services;
+using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 
 namespace Uno.Helpers;
 
@@ -22,5 +23,4 @@ public class Services {
     [PluginService] public static ICommandManager CommandManager { get; private set; }
     [PluginService] public static IPartyList Party { get; private set; }
     [PluginService] public static IGameInteropProvider GameInteropProvider { get; private set; }
-    [PluginService] public static Configuration Config { get; private set; }
 }

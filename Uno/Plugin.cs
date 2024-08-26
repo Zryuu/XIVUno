@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Net.Sockets;
 using System.Reflection;
 using System.Text;
@@ -10,9 +9,6 @@ using Dalamud.Plugin;
 using Dalamud.Game.ClientState.Objects.SubKinds;
 using Dalamud.Interface.Windowing;
 using FFXIVClientStructs.FFXIV.Client.Game.Group;
-using FFXIVClientStructs.FFXIV.Client.Game.Object;
-using FFXIVClientStructs.FFXIV.Client.UI;
-using FFXIVClientStructs.FFXIV.Component.GUI;
 using Newtonsoft.Json.Linq;
 using Uno.Helpers;
 using Uno.Windows;
@@ -397,7 +393,6 @@ public unsafe class Plugin : IDalamudPlugin
             Services.Log.Information("Last ping received more than 5 minutes ago...Client isn't receiving Pong. " +
                                      "Try restarting plugin and attempt to connect again after a few minutes.");
             SendLogout();
-            
             return;
         }
         
