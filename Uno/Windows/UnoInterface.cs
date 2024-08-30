@@ -37,10 +37,7 @@ public unsafe class UnoInterface: Window, IDisposable
 {
     private Plugin plugin;
     private bool bIsTurn = false, bLiveGame = false;
-    private UnoCard card, currentPlayedCard;
-    private List<UnoCard> locPlayerCards;
-    private int numHeldCards;
-    private int[] partynumHeldCardsCards;
+
     private float elapsedTime = 0;
     private int gameSeed;
     
@@ -59,8 +56,6 @@ public unsafe class UnoInterface: Window, IDisposable
         this.plugin = plugin;
 
         UnoSettings = new UnoSettings();
-        card = new UnoCard();
-        locPlayerCards = new List<UnoCard>();
         
         Services.GameInteropProvider.InitializeFromAttributes(this);
         
@@ -420,11 +415,70 @@ public unsafe class UnoInterface: Window, IDisposable
     {
         using var id = ImRaii.PushId("GameSettings###");
         ImGuiUtil.HoverTooltip("Settings for the game.");
-        
-        ImGui.SetCursorPosX(1156);
-        ImGui.Columns(2);
-        
-        ImGui.NextColumn();
+
+        if (ImGui.BeginTable("Game Settings", 2))
+        {
+            //  Starting Hand
+            ImGui.TableNextColumn(); // 0
+            ImGui.Text("Starting Hand");
+            ImGuiUtil.HoverTooltip("How many cards each player starts with?");
+            ImGui.TableNextColumn(); // 1
+            ImGui.SetNextItemWidth(100);
+            ImGui.InputInt("", ref UnoSettings.StartingHand, 0);
+            
+            ImGui.TableNextRow();
+            
+            //  Include Zero
+            ImGui.TableNextColumn(); // 0
+            ImGui.Text("Include Zero Cards?");
+            ImGuiUtil.HoverTooltip("Includes cards with Zero.");
+            ImGui.TableNextColumn(); // 1
+            ImGui.Checkbox("", ref UnoSettings.IncludeZero);
+            
+            ImGui.TableNextRow();
+            
+            //  Include Special
+            ImGui.TableNextColumn(); // 0
+            ImGui.Text("Include Special Cards?");
+            ImGuiUtil.HoverTooltip("Includes +2 and +4 cards.");
+            ImGui.TableNextColumn(); // 1
+            ImGui.Checkbox("", ref UnoSettings.IncludeSpecialCards);
+            
+            ImGui.TableNextRow();
+            
+            //  Include Action
+            ImGui.TableNextColumn(); // 0
+            ImGui.Text("Include Zero Cards?");
+            ImGuiUtil.HoverTooltip("Includes Swap and Block cards.");
+            ImGui.TableNextColumn(); // 1
+            ImGui.Checkbox("", ref UnoSettings.IncludeActionCards);
+            
+            ImGui.TableNextRow();
+            
+            //  Include Wild
+            ImGui.TableNextColumn(); // 0
+            ImGui.Text("Include Zero Cards?");
+            ImGuiUtil.HoverTooltip("Includes Color swap cards.");
+            ImGui.TableNextColumn(); // 1
+            ImGui.Checkbox("", ref UnoSettings.IncludeWildCards);
+            
+            ImGui.TableNextRow();
+            
+            //  Apply Settings
+            ImGui.NextColumn(); // 0
+
+            if (ImGui.Button("Apply Settings"))
+            {
+                if (!plugin.Host)
+                {
+                    Services.Chat.PrintError("[UNO]: Only the Room's host can apply settings.");
+                }
+                //  CONTINUE
+               // plugin.Send
+            }
+            
+        }
+        ImGui.EndTable();
     }
 
     //  Makes a Text Element with a context menu.

@@ -28,6 +28,7 @@ public enum MessageTypeSend
     LeaveRoom,
     UpdateRoom,
     RoomSettings,
+    GameSettings,
     UpdateHost,
     KickPlayer,
 }
@@ -44,6 +45,7 @@ public enum MessageTypeReceive
     LeaveRoom,
     UpdateRoom,
     RoomSettings,
+    GameSettings,
     UpdateHost,
     KickPlayer,
     Error = 99
@@ -55,7 +57,6 @@ public unsafe class Plugin : IDalamudPlugin
     public Delegates Delegates { get; private set; }
     public CommandManager Cm { get; private set; }
     public IPlayerCharacter? LocPlayer { get; set; }
-    public readonly GroupManager* GM;
     
     public bool ConnectedToServer { get; set; }
     public bool Ping { get; set; }
@@ -79,10 +80,15 @@ public unsafe class Plugin : IDalamudPlugin
     //  Uno Vars
     private bool BInUnoGame { get; set; }
     public bool Host;
+    private UnoCard card, currentPlayedCard;
+    private List<UnoCard> locPlayerCards;
+    private int numHeldCards;
+    private int[] partynumHeldCardsCards;
     
     //  XIV Vars
     public string XivName { get; set; }
 
+    //  Misc Vars
     public float DeltaTime;
     
     public Configuration Configuration { get; init; }
@@ -92,12 +98,10 @@ public unsafe class Plugin : IDalamudPlugin
 
     public Plugin()
     {
-        PluginInterface.Create<Services>();
-        
         //  Initing Helpers
+        PluginInterface.Create<Services>();
         Delegates     = new Delegates(this);
         Cm            = new CommandManager(this);
-        GM            = GroupManager.Instance();
         
         Configuration = Services.PluginInterface.GetPluginConfig() as Configuration ?? new Configuration();
         
@@ -288,11 +292,15 @@ public unsafe class Plugin : IDalamudPlugin
                 case MessageTypeReceive.RoomSettings:
                     ReceiveRoomSettings(commandArgument);
                     break;
-                //  UpdateHost = 09
+                //  GameSettings = 09
+                case MessageTypeReceive.GameSettings:
+                    
+                    break;
+                //  UpdateHost = 10
                 case MessageTypeReceive.UpdateHost:
                     ReceiveUpdateHost(commandArgument);
                     break;
-                //  KickPlayer = 10
+                //  KickPlayer = 11
                 case MessageTypeReceive.KickPlayer:
                     ReceiveKickPlayer(commandArgument);
                     break;
@@ -449,9 +457,9 @@ public unsafe class Plugin : IDalamudPlugin
     }
     
     
-    public string SendStartGame(string command)
+    public void SendStartGame(string command)
     {
-        return "StartGame was entered";
+        
     }
     
     public string ReceiveStartGame(string command)
@@ -569,6 +577,19 @@ public unsafe class Plugin : IDalamudPlugin
         Services.Chat.Print($"[UNO]: Settings accepted. Room Settings applied.");
     }
 
+    //  Sends the Game Settings to the Server.
+    public void SendGameSettings(string command)
+    {
+        SendMsg(ResponseType(MessageTypeSend.GameSettings, $"{command}"));
+        Services.Chat.Print($"[UNO]: Applying settings, waiting for server response....");
+    }
+
+    //  Gets the Game Settings from the Server.
+    public void ReceiveGameSettings(string command)
+    {
+        
+    }
+    
     public void ReceiveKickPlayer(string command)
     {
         if (CurrentRoomId == null)
@@ -576,12 +597,14 @@ public unsafe class Plugin : IDalamudPlugin
             return;
         }
         
-        if (XivName != command)
+        if (XivName == command)
         {
-            Services.Chat.Print($"[UNO]: {command} was kicked from the room");
+            ReceiveLeaveRoom(CurrentRoomId.ToString()!);
+            Services.Chat.Print($"[UNO]: You were kicked from the room.");
+            return;
         }
 
-        ReceiveLeaveRoom(CurrentRoomId.ToString()!);
+        Services.Chat.Print($"[UNO]: {command} was kicked from the room");
     }
 
     public void ReceiveUpdateHost(string command)
@@ -609,8 +632,6 @@ public unsafe class Plugin : IDalamudPlugin
     {
         return $"{(int)r:D2}" + message;
     }
-    
-    
     
     
     private void DrawUi() => WindowSystem.Draw();
