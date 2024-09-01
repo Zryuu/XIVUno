@@ -34,7 +34,7 @@ public enum CardType
     WildCard
 }
 
-public class CardBase
+public abstract class CardBase
 {
     public CardInfo CardInfo = new CardInfo();
     
