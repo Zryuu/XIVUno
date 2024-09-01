@@ -21,7 +21,6 @@ public enum CardColor
     Red,
     Yellow,
     Green,
-    White
 }
 
 public enum CardType
@@ -34,11 +33,19 @@ public enum CardType
     WildCard
 }
 
-public abstract class CardBase
+public abstract class CardBase()
 {
-    public CardInfo CardInfo = new CardInfo();
+    protected CardInfo CardInfo;
+    public bool Zero, Special, Action, Wild;
     
-    
+    public void SetPossibleCards(bool zero, bool special, bool action, bool wild)
+    {
+        Zero = zero;
+        Special = special;
+        Action = action;
+        Wild = wild;
+    }
+
     public CardColor? GetCardColor()
     {
         return CardInfo.CardColor;
@@ -86,16 +93,30 @@ public abstract class CardBase
         SetCardNumber(n);
     }
 
-    public void RandomizeCardElements()
+    public void RandomizeCardElements(CardType type)
     {
         var random = new Random();
-        var typerand = random.Next(0, 5);
+        
+       
+        //  Number
+        if (type == CardType.Number)
+        {
+            CardInfo.Number = random.Next(Zero ? 0 : 1, 9);
+        }
+        else
+        {
+            CardInfo.Number = null;
+        }
 
-        var newType = (CardType)typerand;
-        
-        
-        
-        
+        //  Color
+        if (CardInfo.CardType == CardType.WildCard)
+        {
+            CardInfo.CardColor = null;
+        }
+        else
+        {
+            CardInfo.CardColor = (CardColor)random.Next(0, 3);
+        }
     }
     
 }

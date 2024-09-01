@@ -255,7 +255,10 @@
     </ItemGroup>
     
     <ItemGroup>
-      <Folder Include="Cards\Data\" />
+      <Folder Include="Cards\Data\Action\" />
+      <Folder Include="Cards\Data\Numbers\" />
+      <Folder Include="Cards\Data\Special\" />
+      <Folder Include="Cards\Data\Wild\" />
     </ItemGroup>
     
 </Project>
