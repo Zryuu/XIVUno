@@ -37,6 +37,7 @@ public abstract class CardBase()
 {
     protected CardInfo CardInfo;
     public bool Zero, Special, Action, Wild;
+    public IntPtr Texture;
     
     public void SetPossibleCards(bool zero, bool special, bool action, bool wild)
     {

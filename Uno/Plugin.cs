@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.IO.Compression;
 using System.Net.Sockets;
 using System.Reflection;
 using System.Text;
@@ -9,7 +8,6 @@ using Dalamud.IoC;
 using Dalamud.Plugin;
 using Dalamud.Game.ClientState.Objects.SubKinds;
 using Dalamud.Interface.Windowing;
-using FFXIVClientStructs.FFXIV.Client.Game.Group;
 using Newtonsoft.Json.Linq;
 using Uno.Cards;
 using Uno.Helpers;
@@ -72,7 +70,7 @@ public struct UnoSettings
     }
 }
 
-public unsafe class Plugin : IDalamudPlugin
+public class Plugin : IDalamudPlugin
 {
     [PluginService] internal static IDalamudPluginInterface PluginInterface { get; private set; } = null!;
     public Delegates Delegates { get; private set; }
@@ -88,10 +86,8 @@ public unsafe class Plugin : IDalamudPlugin
     public float LastPingReceived { get; set; }
     public int? CurrentRoomId { get; set; }
     public List<string> CurrentPlayersInRoom = new List<string>();
-
     
     // TCP vars
-    
     public TcpClient? Client;
     public NetworkStream? Stream;
     public byte[] Buffer;
@@ -102,10 +98,9 @@ public unsafe class Plugin : IDalamudPlugin
     public UnoSettings UnoSettings;
     private bool BInUnoGame { get; set; }
     public bool Host;
-    private CardBase cardBase, currentPlayedCard;
-    private List<CardBase> locPlayerCards;
-    private int numHeldCards;
-    private int[] partynumHeldCardsCards;
+    private CardBase currentPlayedCard;
+    public List<CardBase> locPlayerCards;
+    public int[] RemotePlayersHeldCards;
     
     //  XIV Vars
     public string? XivName { get; set; }
@@ -487,6 +482,7 @@ public unsafe class Plugin : IDalamudPlugin
     
     public string ReceiveStartGame(string command)
     {
+        
         return "StartGame was entered";
     }
     
@@ -703,10 +699,63 @@ public unsafe class Plugin : IDalamudPlugin
      *          Uno            *
      *         Logic           *
      ***************************/
-    
-    
-    
-    
+
+
+    //  This only handles Local player cards. Remote Player cards are handled in UnoInterface.cs
+    public void InitCards()
+    {
+        //  Local Player cards.
+        locPlayerCards = new List<CardBase>(UnoSettings.StartingHand);
+        var random = new Random();
+        for (var i = 0; i < locPlayerCards.Count; i++)
+        {
+            var ran = random.Next(6);
+            switch (ran)
+            {
+                case 1:
+                    var number = new CardNumber();
+                    number.SetPossibleCards(UnoSettings.IncludeZero, UnoSettings.IncludeSpecialCards, 
+                                            UnoSettings.IncludeActionCards, UnoSettings.IncludeWildCards);
+                    locPlayerCards.Add(number);
+                    break;
+                
+                case 2: 
+                    var block = new CardBlock();
+                    block.SetPossibleCards(UnoSettings.IncludeZero, UnoSettings.IncludeSpecialCards, 
+                                           UnoSettings.IncludeActionCards, UnoSettings.IncludeWildCards);
+                    locPlayerCards.Add(block);
+                    break;
+                
+                case 3: 
+                    var swap = new CardSwap();
+                    swap.SetPossibleCards(UnoSettings.IncludeZero, UnoSettings.IncludeSpecialCards, 
+                                          UnoSettings.IncludeActionCards, UnoSettings.IncludeWildCards);
+                    locPlayerCards.Add(swap);
+                    break;
+                
+                case 4: 
+                    var plusFour = new CardPlusFour();
+                    plusFour.SetPossibleCards(UnoSettings.IncludeZero, UnoSettings.IncludeSpecialCards, 
+                                              UnoSettings.IncludeActionCards, UnoSettings.IncludeWildCards);
+                    locPlayerCards.Add(plusFour);
+                    break;
+                
+                case 5: 
+                    var plusTwo = new CardPlusTwo();
+                    plusTwo.SetPossibleCards(UnoSettings.IncludeZero, UnoSettings.IncludeSpecialCards, 
+                                                 UnoSettings.IncludeActionCards, UnoSettings.IncludeWildCards);
+                    locPlayerCards.Add(plusTwo);
+                    break;
+                
+                case 6: 
+                    var wild = new CardWild();
+                    wild.SetPossibleCards(UnoSettings.IncludeZero, UnoSettings.IncludeSpecialCards, 
+                                              UnoSettings.IncludeActionCards, UnoSettings.IncludeWildCards);
+                    locPlayerCards.Add(wild);
+                    break;
+            }
+        }
+    }
     
     
     private void DrawUi() => WindowSystem.Draw();

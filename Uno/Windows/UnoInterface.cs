@@ -10,6 +10,7 @@ using Dalamud.Interface.Windowing;
 using ImGuiNET;
 using Uno.Helpers;
 using OtterGui;
+using Uno.Cards;
 using ImRaii = OtterGui.Raii.ImRaii;
 
 namespace Uno.Windows;
@@ -20,7 +21,7 @@ namespace Uno.Windows;
 public unsafe class UnoInterface: Window, IDisposable
 {
     private Plugin plugin;
-    private bool bIsTurn = false, bLiveGame = false;
+    private bool IsTurn = false, liveGame = false;
 
     private float elapsedTime = 0;
     private int gameSeed;
@@ -29,8 +30,8 @@ public unsafe class UnoInterface: Window, IDisposable
     public int MaxPlayers;
     public string RoomPassword = "";
 
-    public bool ShowJoinRoomWindow = false;
-    public bool ShowCreateRoomWindow = false;
+    public bool ShowJoinRoomWindow;
+    public bool ShowCreateRoomWindow;
     public bool RoomPrivate;
     
     
@@ -79,7 +80,28 @@ public unsafe class UnoInterface: Window, IDisposable
      *          UI             *
      ***************************/
 
+    public void DrawCurrentPlayedCard(CardBase card)
+    {
+        ImGui.Image(card.Texture, new Vector2(130, 182));
+    }
     
+    
+    public void DrawRemotePlayersCards()
+    {
+
+        foreach (var Player in plugin.CurrentPlayersInRoom)
+        {
+            
+        }
+        
+        foreach (var playerCards in plugin.RemotePlayersHeldCards)
+        {
+            for (var i = 0; i < playerCards; i++)
+            {
+                
+            }
+        }
+    }
     
     
     
@@ -148,8 +170,40 @@ public unsafe class UnoInterface: Window, IDisposable
             //  Connected to Room
             if (plugin.CurrentRoomId != null)
             {
+                
+                //  CONTINUE
+                ImGui.BeginChild("GameView");
+                if (liveGame)
+                {
+                    ImGui.Dummy(new Vector2(0, ImGui.GetWindowHeight() / 2));
+                    ImGui.Indent(578);
+                    DrawCurrentPlayedCard(new CardBack());
+                }
+                else
+                {
+                    ImGui.Dummy(new Vector2(0, ImGui.GetWindowHeight() / 2));
+                    ImGui.Indent(578);
+
+                    if (plugin.Host)
+                    {
+                        if (ImGui.Button("Start Game!"))
+                        {
+                            plugin.SendStartGame("start");
+                        }
+                    }
+                    else
+                    {
+                        ImGui.Text("Waiting for Host to Start Game!");
+                    }
+
+                }
+                ImGui.EndChild();
+                ImGui.Unindent(578);
+
+                ImGui.BeginChild("GameTabs");
                 ImGui.Indent(1156);
                 DrawRoomTabs();
+                ImGui.EndChild();
             }
             //  Not Connected to Server
             else
@@ -324,9 +378,8 @@ public unsafe class UnoInterface: Window, IDisposable
             
                 ImGui.TableNextRow();
             }
+            ImGui.EndTable();
         }
-        
-        ImGui.EndTable();
         ImGui.EndChild();
     }
 
@@ -373,8 +426,9 @@ public unsafe class UnoInterface: Window, IDisposable
             ImGui.TableNextRow();
             ImGui.Text($"Room ID: {plugin.CurrentRoomId.ToString()}");
             
+            ImGui.EndTable();
         }
-        ImGui.EndTable();
+        
         ImGui.EndChild();
     }
 
@@ -449,8 +503,9 @@ public unsafe class UnoInterface: Window, IDisposable
                         plugin.SendGameSettings($"{plugin.UnoSettings.StartingHand};{plugin.UnoSettings.IncludeZero};{plugin.UnoSettings.IncludeActionCards};{plugin.UnoSettings.IncludeSpecialCards};{plugin.UnoSettings.IncludeWildCards}");
                     }
                 }
+                ImGui.EndTable();
             }
-            ImGui.EndTable();
+            
         }
         
         //  Visitor Table
@@ -513,8 +568,9 @@ public unsafe class UnoInterface: Window, IDisposable
                 }
                 ImGuiUtil.HoverTooltip("Only the Room's host can apply settings.");
                 
+                ImGui.EndTable();
             }
-            ImGui.EndTable();
+            
         }
         ImGui.EndChild();
     }
