@@ -14,23 +14,7 @@ using ImRaii = OtterGui.Raii.ImRaii;
 
 namespace Uno.Windows;
 
-public struct UnoSettings
-{
-    public int StartingHand;
-    public bool IncludeZero;
-    public bool IncludeActionCards;
-    public bool IncludeSpecialCards;
-    public bool IncludeWildCards;
 
-    public UnoSettings()
-    {
-        StartingHand = 6;
-        IncludeZero = true;
-        IncludeActionCards = true;
-        IncludeSpecialCards = true;
-        IncludeWildCards = true;
-    }
-}
 
 
 public unsafe class UnoInterface: Window, IDisposable
@@ -49,13 +33,11 @@ public unsafe class UnoInterface: Window, IDisposable
     public bool ShowCreateRoomWindow = false;
     public bool RoomPrivate;
     
-    public UnoSettings UnoSettings;
+    
     
     public UnoInterface(Plugin plugin) : base("UNO###001", ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse | ImGuiWindowFlags.NoResize)
     {
         this.plugin = plugin;
-
-        UnoSettings = new UnoSettings();
         
         Services.GameInteropProvider.InitializeFromAttributes(this);
         
@@ -79,15 +61,11 @@ public unsafe class UnoInterface: Window, IDisposable
                 ImGuiUtil.HoverTooltip("Waiting for quote");
                 break;
             
-            
-            
-            
-            
-            case "Ben Gibson" or "Alacea Na'Sha" or "Alacea Na'Sha" or "Sho Nan" or "Bao Sen":
+            case "Ben Gibson" or "Alacea Na'Sha" or "Patrica Kim" or "Sho Nan" or "Bao Sen":
                 ImGuiUtil.HoverTooltip("This name makes me think you've read my favorite book series." +
-                                       "\nIf you know who Azarin's Sister's name or Ben's wife's name," +
+                                       "\nIf you know either Azarin's Sister's name or Ben's wife's name," +
                                        "\nMessage me on Discord and I'll add you and give you a special name in the plugin." +
-                                       "\nYou can find me in the Dalamud's Discord with my GitHub name");
+                                       "\nDiscord name: .zryu");
                 break;
         }
     }
@@ -98,7 +76,7 @@ public unsafe class UnoInterface: Window, IDisposable
     
     /***************************
      *          UNO            *
-     *          LOGIC          *
+     *          UI             *
      ***************************/
 
     
@@ -106,13 +84,11 @@ public unsafe class UnoInterface: Window, IDisposable
     
     
     /***************************
-     *                         *
      *          UI             *
-     *                         *
      ***************************/
     
-    //  Draws the Tabs at the top of the Interface window.
-    private void DrawMainTabs()
+    //  Draws the Tabs at the top of the Main window.
+    private void DrawMainWindowTabs()
     {
         using var tabBar = ImRaii.TabBar("MainMenuTabs###", ImGuiTabBarFlags.Reorderable);
         
@@ -133,29 +109,83 @@ public unsafe class UnoInterface: Window, IDisposable
             ImGui.EndTabItem();
         }
     }
-
-    private void DrawUnoTabs()
+    
+    //  UI for Uno Tab
+    private void UnoTab()
     {
-        using var tabBar = ImRaii.TabBar("UnoMenuTabs###", ImGuiTabBarFlags.Reorderable);
+        using var id = ImRaii.PushId("Uno###");
+        ImGuiUtil.HoverTooltip("Uno Tab");
         
-        if (ImGui.BeginTabItem("Players"))
-        {
-            PlayersTab();
-            ImGui.EndTabItem();
-        }
-        if (ImGui.BeginTabItem("Room Settings"))
-        {
-            RoomSettingsTab();
-            ImGui.EndTabItem();
-        }
-        if (ImGui.BeginTabItem("Game Settings"))
-        {
-            GameSettingsTab();
-            ImGui.EndTabItem();
-        }
+        ImGui.BeginChild("Uno");
         
-    }
+        //  Not Connected to Server.
+        if (!plugin.ConnectedToServer)
+        { 
+            var color = new Vector4(1, 0, 0, 1);
+            const string buttonText = "Connect to Server";
+            
+            var textSize = ImGui.CalcTextSize(buttonText);
+        
+            var windowSize = ImGui.GetWindowSize();
+            var buttonWidth = textSize.X + (ImGui.GetStyle().FramePadding.X * 2);
+            var buttonHeight = textSize.Y + (ImGui.GetStyle().FramePadding.Y * 2);
 
+            var buttonPosX = (windowSize.X - buttonWidth) * 0.5f;
+            var buttonPosY = (windowSize.Y - buttonHeight) * 0.5f;
+            
+            ImGui.PushStyleColor(ImGuiCol.Text, color);
+            ImGui.SetCursorPos(new Vector2(buttonPosX, buttonPosY));
+            if (ImGui.Button(buttonText, new Vector2(buttonWidth, buttonHeight)))
+            {
+                plugin.SendLogin();
+            }
+            ImGui.PopStyleColor();
+            
+        }
+        //  Connected to Server.
+        else
+        {
+            //  Connected to Room
+            if (plugin.CurrentRoomId != null)
+            {
+                ImGui.Indent(1156);
+                DrawRoomTabs();
+            }
+            //  Not Connected to Server
+            else
+            {
+                if (ShowJoinRoomWindow)
+                {
+                    ImGui.SetNextWindowPos(ImGui.GetMousePos(), ImGuiCond.Appearing);
+                    JoinRoomChildWindow();
+                }
+
+                if (ShowCreateRoomWindow)
+                {
+                    ImGui.SetNextWindowPos(ImGui.GetMousePos(), ImGuiCond.Appearing);
+                    CreateRoomChildWindow();
+                }
+                
+                ImGui.Dummy(new Vector2(0, 25));
+                
+                if (ImGui.Button("Join Room###JoinRoom"))
+                {
+                    ShowJoinRoomWindow = true;
+                }
+                
+                ImGui.Indent(75);
+                ImGui.SameLine();
+                
+                if (ImGui.Button("Create Room###CreateRoom"))
+                {
+                    ShowCreateRoomWindow = true;
+                }
+            }
+        }
+        ImGui.EndChild();
+    }
+    
+    //  Child Window for Creating a new room.
     private void CreateRoomChildWindow()
     {
         
@@ -205,6 +235,7 @@ public unsafe class UnoInterface: Window, IDisposable
         ImGui.End();
     }
     
+    //  Child Window for Joining a room.
     private void JoinRoomChildWindow()
     {
         ImGui.Begin("Join Room", ref ShowJoinRoomWindow, ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoResize);
@@ -234,131 +265,65 @@ public unsafe class UnoInterface: Window, IDisposable
                     
         ImGui.End();
     }
-    
-    
-    //  UI for Uno Tab
-    private void UnoTab()
-    {
-        using var id = ImRaii.PushId("Uno###");
-        ImGuiUtil.HoverTooltip("Uno Tab");
-        
-        ImGui.BeginChild("Uno");
-        
-        //  Not Connected to Server.
-        if (!plugin.ConnectedToServer)
-        { 
-            var color = new Vector4(1, 0, 0, 1);
-            const string buttonText = "Connect to Server";
-            
-            var textSize = ImGui.CalcTextSize(buttonText);
-        
-            var windowSize = ImGui.GetWindowSize();
-            var buttonWidth = textSize.X + (ImGui.GetStyle().FramePadding.X * 2);
-            var buttonHeight = textSize.Y + (ImGui.GetStyle().FramePadding.Y * 2);
 
-            var buttonPosX = (windowSize.X - buttonWidth) * 0.5f;
-            var buttonPosY = (windowSize.Y - buttonHeight) * 0.5f;
-            
-            ImGui.PushStyleColor(ImGuiCol.Text, color);
-            ImGui.SetCursorPos(new Vector2(buttonPosX, buttonPosY));
-            if (ImGui.Button(buttonText, new Vector2(buttonWidth, buttonHeight)))
-            {
-                plugin.SendLogin();
-            }
-            ImGui.PopStyleColor();
-            
-        }
-        //  Connected to Server.
-        else
+    //  Draws Room Tabs.
+    private void DrawRoomTabs()
+    {
+        using var tabBar = ImRaii.TabBar("UnoMenuTabs###", ImGuiTabBarFlags.Reorderable);
+        
+        if (ImGui.BeginTabItem("Players"))
         {
-            //  Connected to Room
-            if (plugin.CurrentRoomId != null)
-            {
-                ImGui.Indent(1156);
-                DrawUnoTabs();
-            }
-            //  Not Connected to Server
-            else
-            {
-                if (ShowJoinRoomWindow)
-                {
-                    ImGui.SetNextWindowPos(ImGui.GetMousePos(), ImGuiCond.Appearing);
-                    JoinRoomChildWindow();
-                }
-
-                if (ShowCreateRoomWindow)
-                {
-                    ImGui.SetNextWindowPos(ImGui.GetMousePos(), ImGuiCond.Appearing);
-                    CreateRoomChildWindow();
-                }
-                
-                ImGui.Dummy(new Vector2(0, 25));
-                
-                if (ImGui.Button("Join Room###JoinRoom"))
-                {
-                    ShowJoinRoomWindow = true;
-                }
-                
-                ImGui.Indent(75);
-                ImGui.SameLine();
-                
-                if (ImGui.Button("Create Room###CreateRoom"))
-                {
-                    ShowCreateRoomWindow = true;
-                }
-            }
+            PlayersTab();
+            ImGui.EndTabItem();
         }
-        ImGui.EndChild();
+        if (ImGui.BeginTabItem("Room Settings"))
+        {
+            RoomSettingsTab();
+            ImGui.EndTabItem();
+        }
+        if (ImGui.BeginTabItem("Game Settings"))
+        {
+            GameSettingsTab();
+            ImGui.EndTabItem();
+        }
+        
     }
     
-    //  UI for Settings Tab
-    private void SettingsTab()
-    {
-     
-        using var id = ImRaii.PushId("Settings");
-        ImGuiUtil.HoverTooltip("Settings Tab");
-        
-        ImGui.BeginChild("Settings");
-        
-        ImGui.EndChild();
-
-    
-    }
-
     private void PlayersTab()
     {
         using var id = ImRaii.PushId("Players###");
         ImGuiUtil.HoverTooltip("List of players present in room.");
         
         ImGui.BeginChild("PlayerList");
-        ImGui.BeginTable("Players", 1);
-
-        ImGui.TableNextColumn();
-        foreach (var player in plugin.CurrentPlayersInRoom)
+        if (ImGui.BeginTable("Players", 1))
         {
-            var size = ImGui.CalcTextSize(player);
-            ImGui.SetNextItemWidth(size.X + (5 * 2));
+            ImGui.TableNextColumn();
+            foreach (var player in plugin.CurrentPlayersInRoom)
+            {
+                var size = ImGui.CalcTextSize(player);
+                ImGui.SetNextItemWidth(size.X + (5 * 2));
 
-            //  This should prob be swapped to the server....Though it MAY cause issues since it adds a char to the name...
-            /*
-            if (player == plugin.CurrentPlayersInRoom.First())
-            {
-                var s = player;
-                s = "\u2606 " + player;
-            }
-            */
+                //  This should prob be swapped to the server....Though it MAY cause issues since it adds a char to the name...
+                /*
+                if (player == plugin.CurrentPlayersInRoom.First())
+                {
+                    var s = player;
+                    s = "\u2606 " + player;
+                }
+                */
             
-            if (plugin.Host && player != plugin.XivName)
-            {
-                TextElementWithContext(player);
-            }
-            else
-            {
-                ImGui.Text(player);
-            }
-            FunnyQuote(player); //  This will get changed with a Json file.
+                if (plugin.Host && player != plugin.XivName)
+                {
+                    TextElementWithContext(player);
+                }
+                else
+                {
+                    ImGui.Text(player);
+                }
+                FunnyQuote(player); //  This will get changed with a Json file.
             
-            ImGui.TableNextRow();
+                ImGui.TableNextRow();
+            }
         }
         
         ImGui.EndTable();
@@ -369,6 +334,8 @@ public unsafe class UnoInterface: Window, IDisposable
     {
         using var id = ImRaii.PushId("RoomSettings###");
         ImGuiUtil.HoverTooltip("Settings for the room.");
+        
+        ImGui.BeginChild("RoomSettings");
         
         if (ImGui.BeginTable("Room Settings", 2))
         {
@@ -406,81 +373,167 @@ public unsafe class UnoInterface: Window, IDisposable
             ImGui.TableNextRow();
             ImGui.Text($"Room ID: {plugin.CurrentRoomId.ToString()}");
             
-            ImGui.EndTable();
         }
-       
+        ImGui.EndTable();
+        ImGui.EndChild();
     }
 
     private void GameSettingsTab()
     {
         using var id = ImRaii.PushId("GameSettings###");
         ImGuiUtil.HoverTooltip("Settings for the game.");
+        ImGui.BeginChild("GameSettings");
 
-        if (ImGui.BeginTable("Game Settings", 2))
+        //  Host Table
+        if (plugin.Host)
         {
-            //  Starting Hand
-            ImGui.TableNextColumn(); // 0
-            ImGui.Text("Starting Hand");
-            ImGuiUtil.HoverTooltip("How many cards each player starts with?");
-            ImGui.TableNextColumn(); // 1
-            ImGui.SetNextItemWidth(100);
-            ImGui.InputInt("", ref UnoSettings.StartingHand, 0);
-            
-            ImGui.TableNextRow();
-            
-            //  Include Zero
-            ImGui.TableNextColumn(); // 0
-            ImGui.Text("Include Zero Cards?");
-            ImGuiUtil.HoverTooltip("Includes cards with Zero.");
-            ImGui.TableNextColumn(); // 1
-            ImGui.Checkbox("", ref UnoSettings.IncludeZero);
-            
-            ImGui.TableNextRow();
-            
-            //  Include Special
-            ImGui.TableNextColumn(); // 0
-            ImGui.Text("Include Special Cards?");
-            ImGuiUtil.HoverTooltip("Includes +2 and +4 cards.");
-            ImGui.TableNextColumn(); // 1
-            ImGui.Checkbox("", ref UnoSettings.IncludeSpecialCards);
-            
-            ImGui.TableNextRow();
-            
-            //  Include Action
-            ImGui.TableNextColumn(); // 0
-            ImGui.Text("Include Zero Cards?");
-            ImGuiUtil.HoverTooltip("Includes Swap and Block cards.");
-            ImGui.TableNextColumn(); // 1
-            ImGui.Checkbox("", ref UnoSettings.IncludeActionCards);
-            
-            ImGui.TableNextRow();
-            
-            //  Include Wild
-            ImGui.TableNextColumn(); // 0
-            ImGui.Text("Include Zero Cards?");
-            ImGuiUtil.HoverTooltip("Includes Color swap cards.");
-            ImGui.TableNextColumn(); // 1
-            ImGui.Checkbox("", ref UnoSettings.IncludeWildCards);
-            
-            ImGui.TableNextRow();
-            
-            //  Apply Settings
-            ImGui.NextColumn(); // 0
-
-            if (ImGui.Button("Apply Settings"))
+            if (ImGui.BeginTable("Game Settings###Host", 2))
             {
-                if (!plugin.Host)
+                //  Starting Hand
+                ImGui.TableNextColumn(); // 0
+                ImGui.Text("Starting Hand");
+                ImGuiUtil.HoverTooltip("How many cards each player starts with?");
+                ImGui.TableNextColumn(); // 1
+                ImGui.SetNextItemWidth(100);
+                ImGui.InputInt("", ref plugin.UnoSettings.StartingHand, 0);
+                
+                ImGui.TableNextRow();
+                
+                //  Include Zero
+                ImGui.TableNextColumn(); // 0
+                ImGui.Text("Include Zero Cards?");
+                ImGuiUtil.HoverTooltip("Includes cards with Zero.");
+                ImGui.TableNextColumn(); // 1
+                ImGui.Checkbox("", ref plugin.UnoSettings.IncludeZero);
+                
+                ImGui.TableNextRow();
+                
+                //  Include Special
+                ImGui.TableNextColumn(); // 0
+                ImGui.Text("Include Special Cards?");
+                ImGuiUtil.HoverTooltip("Includes +2 and +4 cards.");
+                ImGui.TableNextColumn(); // 1
+                ImGui.Checkbox("", ref plugin.UnoSettings.IncludeSpecialCards);
+                
+                ImGui.TableNextRow();
+                
+                //  Include Action
+                ImGui.TableNextColumn(); // 0
+                ImGui.Text("Include Zero Cards?");
+                ImGuiUtil.HoverTooltip("Includes Swap and Block cards.");
+                ImGui.TableNextColumn(); // 1
+                ImGui.Checkbox("", ref plugin.UnoSettings.IncludeActionCards);
+                
+                ImGui.TableNextRow();
+                
+                //  Include Wild
+                ImGui.TableNextColumn(); // 0
+                ImGui.Text("Include Zero Cards?");
+                ImGuiUtil.HoverTooltip("Includes Color swap cards.");
+                ImGui.TableNextColumn(); // 1
+                ImGui.Checkbox("", ref plugin.UnoSettings.IncludeWildCards);
+                
+                ImGui.TableNextRow();
+                
+                //  Apply Settings
+                ImGui.NextColumn(); // 0
+
+                if (ImGui.Button("Apply Settings"))
+                {
+                    if (!plugin.Host)
+                    {
+                        Services.Chat.PrintError("[UNO]: Only the Room's host can apply settings.");
+                    }
+                    else
+                    {
+                        plugin.SendGameSettings($"{plugin.UnoSettings.StartingHand};{plugin.UnoSettings.IncludeZero};{plugin.UnoSettings.IncludeActionCards};{plugin.UnoSettings.IncludeSpecialCards};{plugin.UnoSettings.IncludeWildCards}");
+                    }
+                }
+            }
+            ImGui.EndTable();
+        }
+        
+        //  Visitor Table
+        else
+        {
+            if (ImGui.BeginTable("Game Settings###Visitor", 2))
+            {
+                //  Starting Hand
+                ImGui.TableNextColumn(); // 0
+                ImGui.Text("Starting Hand");
+                ImGuiUtil.HoverTooltip("How many cards each player starts with?");
+                ImGui.TableNextColumn(); // 1
+                ImGui.SetNextItemWidth(100);
+                ImGui.Text($"{plugin.UnoSettings.StartingHand}");
+                
+                ImGui.TableNextRow();
+                
+                //  Include Zero
+                ImGui.TableNextColumn(); // 0
+                ImGui.Text("Include Zero Cards?");
+                ImGuiUtil.HoverTooltip("Includes cards with Zero.");
+                ImGui.TableNextColumn(); // 1
+                ImGui.Text($"{plugin.UnoSettings.IncludeZero}");
+                
+                ImGui.TableNextRow();
+                
+                //  Include Special
+                ImGui.TableNextColumn(); // 0
+                ImGui.Text("Include Special Cards?");
+                ImGuiUtil.HoverTooltip("Includes +2 and +4 cards.");
+                ImGui.TableNextColumn(); // 1
+                ImGui.Text($"{plugin.UnoSettings.IncludeSpecialCards}");
+                
+                ImGui.TableNextRow();
+                
+                //  Include Action
+                ImGui.TableNextColumn(); // 0
+                ImGui.Text("Include Zero Cards?");
+                ImGuiUtil.HoverTooltip("Includes Swap and Block cards.");
+                ImGui.TableNextColumn(); // 1
+                ImGui.Text($"{plugin.UnoSettings.IncludeActionCards}");
+                
+                ImGui.TableNextRow();
+                
+                //  Include Wild
+                ImGui.TableNextColumn(); // 0
+                ImGui.Text("Include Zero Cards?");
+                ImGuiUtil.HoverTooltip("Includes Color swap cards.");
+                ImGui.TableNextColumn(); // 1
+                ImGui.Text($"{plugin.UnoSettings.IncludeWildCards}");
+                
+                ImGui.TableNextRow();
+                
+                //  Apply Settings
+                ImGui.NextColumn(); // 0
+
+                if (ImGui.Button("Apply Settings"))
                 {
                     Services.Chat.PrintError("[UNO]: Only the Room's host can apply settings.");
                 }
-                //  CONTINUE
-               // plugin.Send
+                ImGuiUtil.HoverTooltip("Only the Room's host can apply settings.");
+                
             }
-            
+            ImGui.EndTable();
         }
-        ImGui.EndTable();
+        ImGui.EndChild();
     }
-
+    
+    //  UI for Settings Tab
+    private void SettingsTab()
+    {
+     
+        using var id = ImRaii.PushId("Settings");
+        ImGuiUtil.HoverTooltip("Settings Tab");
+        
+        ImGui.BeginChild("Settings");
+        
+        ImGui.SetCursorPos(new Vector2(ImGui.GetWindowWidth(), ImGui.GetWindowHeight()));
+        ImGui.Text("Under Construction, Come back later.");
+        
+        ImGui.EndChild();
+    }
+    
     //  Makes a Text Element with a context menu.
     private void TextElementWithContext(string name)
     {
@@ -491,20 +544,19 @@ public unsafe class UnoInterface: Window, IDisposable
         {
             if (ImGui.MenuItem("Kick Player"))
             {
-                Services.Chat.Print("It worked");
+                plugin.SendKickPlayer(name);
             }
             if (ImGui.MenuItem("Promote to Host"))
             {
-                Services.Chat.Print("It also worked");
+                plugin.SendPromoteHost(name);
             }
-
-            ImGui.EndPopup();
         }
+        ImGui.EndPopup();
     }
     
     public override void Draw()
     {
-        DrawMainTabs();
+        DrawMainWindowTabs();
     }
 }
 

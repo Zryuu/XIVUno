@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.IO.Compression;
 using System.Net.Sockets;
 using System.Reflection;
 using System.Text;
@@ -10,6 +11,7 @@ using Dalamud.Game.ClientState.Objects.SubKinds;
 using Dalamud.Interface.Windowing;
 using FFXIVClientStructs.FFXIV.Client.Game.Group;
 using Newtonsoft.Json.Linq;
+using Uno.Cards;
 using Uno.Helpers;
 using Uno.Windows;
 
@@ -51,23 +53,42 @@ public enum MessageTypeReceive
     Error = 99
 }
 
+//  Uno Settings Stuct
+public struct UnoSettings
+{
+    public int StartingHand;
+    public bool IncludeZero;
+    public bool IncludeActionCards;
+    public bool IncludeSpecialCards;
+    public bool IncludeWildCards;
+
+    public UnoSettings()
+    {
+        StartingHand = 6;
+        IncludeZero = true;
+        IncludeActionCards = true;
+        IncludeSpecialCards = true;
+        IncludeWildCards = true;
+    }
+}
+
 public unsafe class Plugin : IDalamudPlugin
 {
     [PluginService] internal static IDalamudPluginInterface PluginInterface { get; private set; } = null!;
     public Delegates Delegates { get; private set; }
     public CommandManager Cm { get; private set; }
-    public IPlayerCharacter? LocPlayer { get; set; }
     
-    public bool ConnectedToServer { get; set; }
-    public bool Ping { get; set; }
     
     //  Server Vars
     internal MessageTypeSend MessageTypeSend;
     internal MessageTypeReceive MessageTypeReceive;
+    public bool ConnectedToServer { get; set; }
+    public bool Ping { get; set; }
     public float LastPingSent { get; set; }
     public float LastPingReceived { get; set; }
     public int? CurrentRoomId { get; set; }
     public List<string> CurrentPlayersInRoom = new List<string>();
+
     
     // TCP vars
     
@@ -78,15 +99,17 @@ public unsafe class Plugin : IDalamudPlugin
     public int AfkTimer = 300; //   5Mins
     
     //  Uno Vars
+    public UnoSettings UnoSettings;
     private bool BInUnoGame { get; set; }
     public bool Host;
-    private UnoCard card, currentPlayedCard;
-    private List<UnoCard> locPlayerCards;
+    private CardBase cardBase, currentPlayedCard;
+    private List<CardBase> locPlayerCards;
     private int numHeldCards;
     private int[] partynumHeldCardsCards;
     
     //  XIV Vars
-    public string XivName { get; set; }
+    public string? XivName { get; set; }
+    public IPlayerCharacter? LocPlayer { get; set; }
 
     //  Misc Vars
     public float DeltaTime;
@@ -121,6 +144,8 @@ public unsafe class Plugin : IDalamudPlugin
 
         // Adds another button that is doing the same but for the main ui of the plugin
         Services.PluginInterface.UiBuilder.OpenMainUi += ToggleMainUi;
+
+        UnoSettings = new UnoSettings();
         
         SaveLocPlayer();
     }
@@ -143,10 +168,10 @@ public unsafe class Plugin : IDalamudPlugin
     {
         Services.Log.Information("connecting to server");
         var assembly = Assembly.GetExecutingAssembly();
-        const string resourceName = "Uno.appsettings.json";
+        //const string resourceName = "Uno.appsettings.json";
 
         string? serverIp;
-        using (var stream = assembly.GetManifestResourceStream(resourceName))
+        using (var stream = assembly.GetManifestResourceStream("Uno.appsettings.json"))
         using (var reader = new StreamReader(stream!))
         {
             var json = reader.ReadToEnd();
@@ -294,7 +319,7 @@ public unsafe class Plugin : IDalamudPlugin
                     break;
                 //  GameSettings = 09
                 case MessageTypeReceive.GameSettings:
-                    
+                    ReceiveGameSettings(commandArgument);
                     break;
                 //  UpdateHost = 10
                 case MessageTypeReceive.UpdateHost:
@@ -455,8 +480,6 @@ public unsafe class Plugin : IDalamudPlugin
         ConnectedToServer = false;
         Services.Chat.Print($"[UNO]: {command}");
     }
-    
-    
     public void SendStartGame(string command)
     {
         
@@ -581,15 +604,42 @@ public unsafe class Plugin : IDalamudPlugin
     public void SendGameSettings(string command)
     {
         SendMsg(ResponseType(MessageTypeSend.GameSettings, $"{command}"));
-        Services.Chat.Print($"[UNO]: Applying settings, waiting for server response....");
+        Services.Chat.Print($"[UNO]: Applying game settings, waiting for server response....");
     }
 
     //  Gets the Game Settings from the Server.
     public void ReceiveGameSettings(string command)
     {
+        var parts = command.Split(";");
+        var starting = int.Parse(parts[0]);
+        var zero = bool.Parse(parts[1]);
+        var action = bool.Parse(parts[2]);
+        var special = bool.Parse(parts[3]);
+        var wild = bool.Parse(parts[4]);
+
+        UnoSettings.StartingHand = starting;
+        UnoSettings.IncludeZero = zero;
+        UnoSettings.IncludeActionCards = action;
+        UnoSettings.IncludeSpecialCards = special;
+        UnoSettings.IncludeWildCards = wild;
+
+        Services.Chat.Print("[UNO]: Updated Game Settings.");
+    }
+
+    //  Sends Kick Player to Server.
+    public void SendKickPlayer(string command)
+    {
+        if (CurrentRoomId == null || !Host)
+        {
+            Services.Chat.PrintError($"[UNO]: Unable to kick player. You're not in a valid room or not the room's host.");
+            return;
+        }
         
+        Services.Chat.Print("[UNO]: Attempting to Kick Player...");
+        SendMsg(ResponseType(MessageTypeSend.KickPlayer, $"{command}"));
     }
     
+    //  Receives Kick Player response from Server.
     public void ReceiveKickPlayer(string command)
     {
         if (CurrentRoomId == null)
@@ -607,6 +657,21 @@ public unsafe class Plugin : IDalamudPlugin
         Services.Chat.Print($"[UNO]: {command} was kicked from the room");
     }
 
+    public void SendPromoteHost(string command)
+    {
+        // Checks if host.
+        if (!Host)
+        {
+            Services.Chat.PrintError($"[UNO]: Couldn't Promote Host. Please check log for more info (/xllog)");
+            Services.Log.Information($"[ERROR]: Couldn't send command PromoteHost. Not Host of a room.");
+            return;
+        }
+        
+        SendMsg(ResponseType(MessageTypeSend.UpdateHost, $"{command}"));
+        
+    }
+    
+    //  Receives Update Host Response from Server.
     public void ReceiveUpdateHost(string command)
     {
         if (CurrentRoomId == null)
@@ -632,6 +697,16 @@ public unsafe class Plugin : IDalamudPlugin
     {
         return $"{(int)r:D2}" + message;
     }
+    
+    
+    /***************************
+     *          Uno            *
+     *         Logic           *
+     ***************************/
+    
+    
+    
+    
     
     
     private void DrawUi() => WindowSystem.Draw();

@@ -32,6 +32,230 @@
       <EmbeddedResource Include="appsettings.json">
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       </EmbeddedResource>
+      <None Remove="Cards\Data\blue_0.png" />
+      <EmbeddedResource Include="Cards\Data\blue_0.png">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </EmbeddedResource>
+      <None Remove="Cards\Data\blue_1.png" />
+      <EmbeddedResource Include="Cards\Data\blue_1.png">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </EmbeddedResource>
+      <None Remove="Cards\Data\blue_2.png" />
+      <EmbeddedResource Include="Cards\Data\blue_2.png">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </EmbeddedResource>
+      <None Remove="Cards\Data\blue_3.png" />
+      <EmbeddedResource Include="Cards\Data\blue_3.png">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </EmbeddedResource>
+      <None Remove="Cards\Data\blue_4.png" />
+      <EmbeddedResource Include="Cards\Data\blue_4.png">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </EmbeddedResource>
+      <None Remove="Cards\Data\blue_5.png" />
+      <EmbeddedResource Include="Cards\Data\blue_5.png">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </EmbeddedResource>
+      <None Remove="Cards\Data\blue_6.png" />
+      <EmbeddedResource Include="Cards\Data\blue_6.png">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </EmbeddedResource>
+      <None Remove="Cards\Data\blue_7.png" />
+      <EmbeddedResource Include="Cards\Data\blue_7.png">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </EmbeddedResource>
+      <None Remove="Cards\Data\blue_8.png" />
+      <EmbeddedResource Include="Cards\Data\blue_8.png">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </EmbeddedResource>
+      <None Remove="Cards\Data\blue_9.png" />
+      <EmbeddedResource Include="Cards\Data\blue_9.png">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </EmbeddedResource>
+      <None Remove="Cards\Data\blue_picker.png" />
+      <EmbeddedResource Include="Cards\Data\blue_picker.png">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </EmbeddedResource>
+      <None Remove="Cards\Data\blue_reverse.png" />
+      <EmbeddedResource Include="Cards\Data\blue_reverse.png">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </EmbeddedResource>
+      <None Remove="Cards\Data\blue_skip.png" />
+      <EmbeddedResource Include="Cards\Data\blue_skip.png">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </EmbeddedResource>
+      <None Remove="Cards\Data\card_back.png" />
+      <EmbeddedResource Include="Cards\Data\card_back.png">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </EmbeddedResource>
+      <None Remove="Cards\Data\green_0.png" />
+      <EmbeddedResource Include="Cards\Data\green_0.png">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </EmbeddedResource>
+      <None Remove="Cards\Data\green_1.png" />
+      <EmbeddedResource Include="Cards\Data\green_1.png">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </EmbeddedResource>
+      <None Remove="Cards\Data\green_2.png" />
+      <EmbeddedResource Include="Cards\Data\green_2.png">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </EmbeddedResource>
+      <None Remove="Cards\Data\green_3.png" />
+      <EmbeddedResource Include="Cards\Data\green_3.png">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </EmbeddedResource>
+      <None Remove="Cards\Data\green_4.png" />
+      <EmbeddedResource Include="Cards\Data\green_4.png">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </EmbeddedResource>
+      <None Remove="Cards\Data\green_5.png" />
+      <EmbeddedResource Include="Cards\Data\green_5.png">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </EmbeddedResource>
+      <None Remove="Cards\Data\green_6.png" />
+      <EmbeddedResource Include="Cards\Data\green_6.png">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </EmbeddedResource>
+      <None Remove="Cards\Data\green_7.png" />
+      <EmbeddedResource Include="Cards\Data\green_7.png">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </EmbeddedResource>
+      <None Remove="Cards\Data\green_8.png" />
+      <EmbeddedResource Include="Cards\Data\green_8.png">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </EmbeddedResource>
+      <None Remove="Cards\Data\green_9.png" />
+      <EmbeddedResource Include="Cards\Data\green_9.png">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </EmbeddedResource>
+      <None Remove="Cards\Data\green_picker.png" />
+      <EmbeddedResource Include="Cards\Data\green_picker.png">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </EmbeddedResource>
+      <None Remove="Cards\Data\green_reverse.png" />
+      <EmbeddedResource Include="Cards\Data\green_reverse.png">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </EmbeddedResource>
+      <None Remove="Cards\Data\green_skip.png" />
+      <EmbeddedResource Include="Cards\Data\green_skip.png">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </EmbeddedResource>
+      <None Remove="Cards\Data\red_0.png" />
+      <EmbeddedResource Include="Cards\Data\red_0.png">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </EmbeddedResource>
+      <None Remove="Cards\Data\red_1.png" />
+      <EmbeddedResource Include="Cards\Data\red_1.png">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </EmbeddedResource>
+      <None Remove="Cards\Data\red_2.png" />
+      <EmbeddedResource Include="Cards\Data\red_2.png">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </EmbeddedResource>
+      <None Remove="Cards\Data\red_3.png" />
+      <EmbeddedResource Include="Cards\Data\red_3.png">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </EmbeddedResource>
+      <None Remove="Cards\Data\red_4.png" />
+      <EmbeddedResource Include="Cards\Data\red_4.png">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </EmbeddedResource>
+      <None Remove="Cards\Data\red_5.png" />
+      <EmbeddedResource Include="Cards\Data\red_5.png">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </EmbeddedResource>
+      <None Remove="Cards\Data\red_6.png" />
+      <EmbeddedResource Include="Cards\Data\red_6.png">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </EmbeddedResource>
+      <None Remove="Cards\Data\red_7.png" />
+      <EmbeddedResource Include="Cards\Data\red_7.png">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </EmbeddedResource>
+      <None Remove="Cards\Data\red_8.png" />
+      <EmbeddedResource Include="Cards\Data\red_8.png">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </EmbeddedResource>
+      <None Remove="Cards\Data\red_9.png" />
+      <EmbeddedResource Include="Cards\Data\red_9.png">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </EmbeddedResource>
+      <None Remove="Cards\Data\red_picker.png" />
+      <EmbeddedResource Include="Cards\Data\red_picker.png">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </EmbeddedResource>
+      <None Remove="Cards\Data\red_reverse.png" />
+      <EmbeddedResource Include="Cards\Data\red_reverse.png">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </EmbeddedResource>
+      <None Remove="Cards\Data\red_skip.png" />
+      <EmbeddedResource Include="Cards\Data\red_skip.png">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </EmbeddedResource>
+      <None Remove="Cards\Data\wild_color_changer.png" />
+      <EmbeddedResource Include="Cards\Data\wild_color_changer.png">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </EmbeddedResource>
+      <None Remove="Cards\Data\wild_pick_four.png" />
+      <EmbeddedResource Include="Cards\Data\wild_pick_four.png">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </EmbeddedResource>
+      <None Remove="Cards\Data\yellow_0.png" />
+      <EmbeddedResource Include="Cards\Data\yellow_0.png">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </EmbeddedResource>
+      <None Remove="Cards\Data\yellow_1.png" />
+      <EmbeddedResource Include="Cards\Data\yellow_1.png">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </EmbeddedResource>
+      <None Remove="Cards\Data\yellow_2.png" />
+      <EmbeddedResource Include="Cards\Data\yellow_2.png">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </EmbeddedResource>
+      <None Remove="Cards\Data\yellow_3.png" />
+      <EmbeddedResource Include="Cards\Data\yellow_3.png">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </EmbeddedResource>
+      <None Remove="Cards\Data\yellow_4.png" />
+      <EmbeddedResource Include="Cards\Data\yellow_4.png">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </EmbeddedResource>
+      <None Remove="Cards\Data\yellow_5.png" />
+      <EmbeddedResource Include="Cards\Data\yellow_5.png">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </EmbeddedResource>
+      <None Remove="Cards\Data\yellow_6.png" />
+      <EmbeddedResource Include="Cards\Data\yellow_6.png">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </EmbeddedResource>
+      <None Remove="Cards\Data\yellow_7.png" />
+      <EmbeddedResource Include="Cards\Data\yellow_7.png">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </EmbeddedResource>
+      <None Remove="Cards\Data\yellow_8.png" />
+      <EmbeddedResource Include="Cards\Data\yellow_8.png">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </EmbeddedResource>
+      <None Remove="Cards\Data\yellow_9.png" />
+      <EmbeddedResource Include="Cards\Data\yellow_9.png">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </EmbeddedResource>
+      <None Remove="Cards\Data\yellow_picker.png" />
+      <EmbeddedResource Include="Cards\Data\yellow_picker.png">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </EmbeddedResource>
+      <None Remove="Cards\Data\yellow_reverse.png" />
+      <EmbeddedResource Include="Cards\Data\yellow_reverse.png">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </EmbeddedResource>
+      <None Remove="Cards\Data\yellow_skip.png" />
+      <EmbeddedResource Include="Cards\Data\yellow_skip.png">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </EmbeddedResource>
+    </ItemGroup>
+    
+    <ItemGroup>
+      <Folder Include="Cards\Data\" />
     </ItemGroup>
     
 </Project>
