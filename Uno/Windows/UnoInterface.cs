@@ -21,19 +21,30 @@ namespace Uno.Windows;
 public unsafe class UnoInterface: Window, IDisposable
 {
     private Plugin plugin;
-    private bool IsTurn = false, liveGame = false;
-
-    private float elapsedTime = 0;
-    private int gameSeed;
     
-    public int TypedRoomId;     //  This is the RoomID the player types. not the actual ID of the room the player is in.
+    //  UI settings
+    public int TypedRoomId; //  This is the RoomID the player types. not the actual ID of the room the player is in.
+    public float DeckPosY = 730f;
+    public int HoverAmount = 10;
+    public float HoverLerpSpeed = 0.1f; //  This amount is applied to the Lerp every frame (0 -> 1)
+    public bool CardWasHovered = false;
+    
+    
+    //  Game Settings (that don't need to be persistent)
+    private bool isTurn = false, liveGame = false;
+    
+
+    
+    //  Room Settings
     public int MaxPlayers;
     public string RoomPassword = "";
-
     public bool ShowJoinRoomWindow;
     public bool ShowCreateRoomWindow;
     public bool RoomPrivate;
     
+    //  These arent used currently but might be later.
+    private float elapsedTime = 0;
+    private int gameSeed; 
     
     
     public UnoInterface(Plugin plugin) : base("UNO###001", ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse | ImGuiWindowFlags.NoResize)
@@ -84,6 +95,49 @@ public unsafe class UnoInterface: Window, IDisposable
     {
         ImGui.Image(card.Texture, new Vector2(130, 182));
     }
+
+    public void DrawCurrentDeck(List<CardBase> deck)
+    {
+        var hovered = ImGui.IsItemHovered();
+        for (var i = 0; i < deck.Count; i++)
+        {
+            //  This may mess up player name tooltips.
+            ImGui.SetCursorPos(new Vector2(ImGui.GetWindowWidth() / 4, DeckPosY));
+            ImGui.PushID("card###");
+            
+            //  Card clicked
+            if (ImGui.ImageButton(deck[i].Texture, new Vector2(130, 182)))
+            {
+                if (isTurn)
+                {
+                    Services.Chat.Print($"card: {deck[i].GetCardType()}, {deck[i].GetCardColor()}, {deck[i].GetCardNumber()}");
+                    deck.Remove(deck[i]);
+                    //  send card when button click
+                }
+            }
+            
+            //  Card is hovered
+            if (ImGui.IsItemHovered())
+            {
+                CardWasHovered = true;
+                DeckPosY = HoverLerp(DeckPosY, 730 - HoverAmount, HoverLerpSpeed);
+                //  Play hover up anim
+            }
+
+            //  Card was hovered
+            if (CardWasHovered && !hovered)
+            {
+                DeckPosY = HoverLerp(DeckPosY, 730 - HoverAmount, HoverLerpSpeed, true);
+
+                if (Math.Abs(DeckPosY - 730f) < 0.01)
+                {
+                    CardWasHovered = false;
+                }
+            }
+            
+            ImGui.Dummy(new Vector2(10, 0));
+        }
+    }
     
     
     public void DrawRemotePlayersCards()
@@ -102,8 +156,16 @@ public unsafe class UnoInterface: Window, IDisposable
             }
         }
     }
-    
-    
+
+    public float HoverLerp(float start, float end, float alpha, bool reverse = false)
+    {
+        if (reverse)
+        {
+            return end + ((start - end) * alpha);
+        }
+        
+        return start + ((end - start) * alpha);
+    }
     
     /***************************
      *          UI             *
@@ -170,19 +232,23 @@ public unsafe class UnoInterface: Window, IDisposable
             //  Connected to Room
             if (plugin.CurrentRoomId != null)
             {
-                
-                //  CONTINUE
                 ImGui.BeginChild("GameView");
+                
+                //  Uno Game is live
                 if (liveGame)
                 {
+                    //  CONTINUE: Check if this works correctly.
                     ImGui.Dummy(new Vector2(0, ImGui.GetWindowHeight() / 2));
                     ImGui.Indent(578);
-                    DrawCurrentPlayedCard(new CardBack());
+                    DrawCurrentPlayedCard(plugin.currentPlayedCard);
+                    DrawCurrentDeck(plugin.locPlayerCards);
+
                 }
-                else
+                else //  Uno Game isn't live
                 {
                     ImGui.Dummy(new Vector2(0, ImGui.GetWindowHeight() / 2));
                     ImGui.Indent(578);
+                    DrawCurrentPlayedCard(plugin.currentPlayedCard);
 
                     if (plugin.Host)
                     {
@@ -195,10 +261,9 @@ public unsafe class UnoInterface: Window, IDisposable
                     {
                         ImGui.Text("Waiting for Host to Start Game!");
                     }
-
                 }
-                ImGui.EndChild();
                 ImGui.Unindent(578);
+                ImGui.EndChild();
 
                 ImGui.BeginChild("GameTabs");
                 ImGui.Indent(1156);
@@ -342,6 +407,7 @@ public unsafe class UnoInterface: Window, IDisposable
         }
         
     }
+    
     
     private void PlayersTab()
     {
@@ -491,9 +557,12 @@ public unsafe class UnoInterface: Window, IDisposable
                 
                 //  Apply Settings
                 ImGui.NextColumn(); // 0
-
                 if (ImGui.Button("Apply Settings"))
                 {
+                 
+                    Services.Chat.PrintError("[UNO]: Unable to change these settings as they're currently under construction. Please check back later.");
+                    
+                    /*
                     if (!plugin.Host)
                     {
                         Services.Chat.PrintError("[UNO]: Only the Room's host can apply settings.");
@@ -502,7 +571,9 @@ public unsafe class UnoInterface: Window, IDisposable
                     {
                         plugin.SendGameSettings($"{plugin.UnoSettings.StartingHand};{plugin.UnoSettings.IncludeZero};{plugin.UnoSettings.IncludeActionCards};{plugin.UnoSettings.IncludeSpecialCards};{plugin.UnoSettings.IncludeWildCards}");
                     }
+                    */
                 }
+                ImGuiUtil.HoverTooltip("Applies Settings to the room. [CURRENTLY UNAVAILABLE]");
                 ImGui.EndTable();
             }
             

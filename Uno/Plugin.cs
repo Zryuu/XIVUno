@@ -15,6 +15,7 @@ using Uno.Windows;
 
 namespace Uno;
 
+//  CONTINUE: Add SendTurn and ReceiveTurn
 //  CommandBytes sent to Server.
 public enum MessageTypeSend
 {
@@ -98,7 +99,7 @@ public class Plugin : IDalamudPlugin
     public UnoSettings UnoSettings;
     private bool BInUnoGame { get; set; }
     public bool Host;
-    private CardBase currentPlayedCard;
+    public CardBase currentPlayedCard = new CardBack();
     public List<CardBase> locPlayerCards;
     public int[] RemotePlayersHeldCards;
     
@@ -163,7 +164,6 @@ public class Plugin : IDalamudPlugin
     {
         Services.Log.Information("connecting to server");
         var assembly = Assembly.GetExecutingAssembly();
-        //const string resourceName = "Uno.appsettings.json";
 
         string? serverIp;
         using (var stream = assembly.GetManifestResourceStream("Uno.appsettings.json"))
@@ -269,8 +269,6 @@ public class Plugin : IDalamudPlugin
         
             var commandByte = int.Parse(command.Substring(0, 2));
             var commandArgument = command[2..];
-            
-            Services.Log.Information($"Byte: {commandByte} | command: {commandArgument}");
             
             var route = (MessageTypeReceive)(commandByte); 
             
@@ -482,6 +480,12 @@ public class Plugin : IDalamudPlugin
     
     public string ReceiveStartGame(string command)
     {
+        //  Init Loc player cards.
+        InitCards();
+        
+        //  Parse command for starting card.
+        
+        //  Parse command for starting player name
         
         return "StartGame was entered";
     }
@@ -755,6 +759,11 @@ public class Plugin : IDalamudPlugin
                     break;
             }
         }
+    }
+
+    public void SetCurrentPlayedCard(CardBase newCard)
+    {
+        currentPlayedCard = newCard;
     }
     
     
