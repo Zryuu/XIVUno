@@ -478,7 +478,7 @@ public class Plugin : IDalamudPlugin
         
     }
     
-    public string ReceiveStartGame(string command)
+    public void ReceiveStartGame(string command)
     {
         //  Init Loc player cards.
         InitCards();
@@ -487,17 +487,16 @@ public class Plugin : IDalamudPlugin
         
         //  Parse command for starting player name
         
-        return "StartGame was entered";
     }
     
-    public string SendEndGame(string command)
+    public void SendEndGame(string command)
     {
-        return "EndGame was entered";
+        
     }
     
-    public string ReceiveEndGame(string command)
+    public void ReceiveEndGame(string command)
     {
-        return "EndGame was entered";
+        
     }
     
     public void SendCreateRoom(string command)
