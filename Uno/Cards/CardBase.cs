@@ -47,12 +47,17 @@ public abstract class CardBase()
         Wild = wild;
     }
 
-    public CardColor? GetCardColor()
+    public int GetCardColor()
     {
-        return CardInfo.CardColor;
+        if (CardInfo.CardColor == null)
+        {
+            return -1;
+        }
+        
+        return (int)CardInfo.CardColor;
     }
 
-    public void SetCardColor(CardColor color)
+    public void SetCardColor(CardColor? color)
     {
         CardInfo.CardColor = color;
     }
@@ -67,9 +72,14 @@ public abstract class CardBase()
         CardInfo.CardType = type;
     }
     
-    public int? GetCardNumber()
+    public int GetCardNumber()
     {
-        return CardInfo.Number ?? null;
+        if (CardInfo.Number == null)
+        {
+            return -1;
+        }
+        
+        return (int)CardInfo.Number;
     }
 
     public void SetCardNumber(int? n)
@@ -87,7 +97,7 @@ public abstract class CardBase()
         CardInfo.Name = $"{CardInfo.CardColor};{CardInfo.CardType};{CardInfo.Number}";
     }
 
-    public void SetCardElements(CardColor color, CardType type, int? n)
+    public void SetCardElements(CardColor? color, CardType type, int? n)
     {
         SetCardColor(color);
         SetCardType(type);

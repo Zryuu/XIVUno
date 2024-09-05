@@ -218,7 +218,7 @@ public class Plugin : IDalamudPlugin
         //  Saves user ref
         LocPlayer = Services.ClientState.LocalPlayer!;
 
-        //  Get User name.
+        //  Get Username.
         XivName = LocPlayer.Name.ToString();
     }
     
@@ -327,6 +327,7 @@ public class Plugin : IDalamudPlugin
                     break;
                 //  Turn = 12
                 case MessageTypeReceive.Turn:
+                    ReceiveTurn(commandArgument);
                     break;
                 
                 //  Error = 99
@@ -488,34 +489,15 @@ public class Plugin : IDalamudPlugin
     
     public void ReceiveStartGame(string command)
     {
-     
-        //  parse command
-        var parts = command.Split(";");
-        var type = parts[0];
-        var color = parts[1];
-        if (color == "null")
-        {
-            color = null;
-        }
-        var number = parts[2];
-        if (number == "null")
-        {
-            number = null;
-        }
-        
-        //  Set starting card.
-        currentPlayedCard.SetCardElements((CardColor)int.Parse(color!), (CardType)int.Parse(type), int.Parse(number!));
-        
         //  Init Loc player cards.
         InitCards();
         
         //  starting player name
-        var name = parts[3];
-        isTurn = XivName == name;
+        isTurn = XivName == command;
         
         liveGame = true;
         
-        Services.Chat.Print($"[UNO]: GAME IS LIVE!");
+        Services.Chat.Print($"[UNO]: GAME IS LIVE! {command} has first turn!");
     }
     
     public void SendEndGame()
@@ -545,9 +527,13 @@ public class Plugin : IDalamudPlugin
 
     public void SendTurn(string turnType, CardBase card)
     {
+        var cardType = card.GetCardType();
+        var cardColor = card.GetCardColor();
+        var cardNumber = card.GetCardNumber();
+        
         
         Services.Log.Information($"[UNO]: Turn sent to server.");
-        SendMsg(ResponseType(MessageTypeSend.Turn, $"{turnType};{card.GetCardType()};{card.GetCardColor()};{card.GetCardNumber()}"));
+        SendMsg(ResponseType(MessageTypeSend.Turn, $"{turnType};{cardType};{cardColor};{cardNumber}"));
     }
 
     public void ReceiveTurn(string command)
@@ -555,20 +541,11 @@ public class Plugin : IDalamudPlugin
         var parts = command.Split(";");
         var turnType = parts[0];
         var type = (CardType)int.Parse(parts[1]);
-        var color = (CardColor)int.Parse(parts[2]);
+        var color = int.Parse(parts[2]);
         var number = int.Parse(parts[3]);
         var name = parts[4];
+
         
-        currentPlayedCard.SetCardElements(color, type, number);
-
-        isTurn = name == XivName;
-
-        if ((isTurn && type == CardType.Block) || type == CardType.Swap)
-        {
-            isTurn = false;
-            //  PLay blocked anim or something....idk but something the player knows they got blocked/swapped.
-        }
-
         //  Update held cards for other players.
         switch (turnType)
         {
@@ -580,7 +557,7 @@ public class Plugin : IDalamudPlugin
                         RemotePlayersHeldCards[i]++;
                     }
                 }
-                break;
+                return;
             case "Play":
                 for (var i = 0; i < CurrentPlayersInRoom.Count; i++)
                 {
@@ -590,6 +567,56 @@ public class Plugin : IDalamudPlugin
                     }
                 }
                 break;
+        }
+        
+        //  Update Current Card
+        switch (type)
+        {
+            case CardType.Number:
+                currentPlayedCard = new CardNumber();
+                currentPlayedCard.SetCardElements((CardColor)color, type, number);
+                break;
+            case CardType.Swap:
+                currentPlayedCard = new CardSwap();
+                currentPlayedCard.SetCardElements((CardColor)color, type, null);
+                break;
+            case CardType.Block:
+                currentPlayedCard = new CardBlock();
+                currentPlayedCard.SetCardElements((CardColor)color, type, null);
+                break;
+            case CardType.PlusTwo:
+                currentPlayedCard = new CardPlusTwo();
+                currentPlayedCard.SetCardElements((CardColor)color, type, null);
+                break;
+            case CardType.PlusFour:
+                currentPlayedCard = new CardPlusFour();
+                currentPlayedCard.SetCardElements((CardColor)color, type, null);
+                break;
+            case CardType.WildCard:
+                currentPlayedCard = new CardWild();
+                currentPlayedCard.SetCardElements(null, type, null);
+                break;
+        }
+
+        isTurn = name == XivName;
+
+        //  if its client's turn
+        if (isTurn)
+        {
+            
+            //  If Client's turn was blocked.
+            if (type == CardType.Block)
+            {
+                isTurn = false;
+                Services.Chat.Print("[UNO]: Your Turn was blocked!");
+                //  PLay blocked anim or something....idk but something the player knows they got blocked.
+                SendTurn("Play", currentPlayedCard);
+            }
+            Services.Chat.Print("[UNO]: It's your turn!");
+        }
+        else
+        {
+            Services.Chat.Print($"[UNO]: It's {name}'s turn!");
         }
         
         //  Func to point or highlight the player whose turn it is.
@@ -854,6 +881,13 @@ public class Plugin : IDalamudPlugin
                     locPlayerCards.Add(wild);
                     break;
             }
+        }
+
+        RemotePlayersHeldCards = new int[CurrentPlayersInRoom.Count];
+
+        for (var i = 0; i < RemotePlayersHeldCards.Length; i++)
+        {
+            RemotePlayersHeldCards[i] = UnoSettings.StartingHand;
         }
     }
 

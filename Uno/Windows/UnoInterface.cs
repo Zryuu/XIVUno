@@ -38,7 +38,7 @@ public unsafe class UnoInterface: Window, IDisposable
     public bool ShowCreateRoomWindow;
     public bool RoomPrivate;
     
-    //  These arent used currently but might be later.
+    //  These aren't used currently but might be later.
     private float elapsedTime = 0;
     private int gameSeed; 
     
@@ -144,7 +144,7 @@ public unsafe class UnoInterface: Window, IDisposable
     public void DrawRemotePlayersCards()
     {
 
-        foreach (var Player in plugin.CurrentPlayersInRoom)
+        foreach (var player in plugin.CurrentPlayersInRoom)
         {
             
         }
@@ -238,6 +238,15 @@ public unsafe class UnoInterface: Window, IDisposable
                 //  Uno Game is live
                 if (plugin.liveGame)
                 {
+                    //  End Game 
+                    if (plugin.Host)
+                    {
+                        if (ImGui.Button("End Game"))
+                        {
+                            plugin.SendEndGame();
+                        }
+                    }
+                    
                     //  CONTINUE: Check if this works correctly.
                     ImGui.Dummy(new Vector2(0, ImGui.GetWindowHeight() / 2));
                     ImGui.Indent(578);
