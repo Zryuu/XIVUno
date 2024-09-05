@@ -29,10 +29,6 @@ public unsafe class UnoInterface: Window, IDisposable
     public float HoverLerpSpeed = 0.1f; //  This amount is applied to the Lerp every frame (0 -> 1)
     public bool CardWasHovered = false;
     
-    
-    //  Game Settings (that don't need to be persistent)
-    private bool isTurn = false, liveGame = false;
-    
 
     
     //  Room Settings
@@ -108,11 +104,16 @@ public unsafe class UnoInterface: Window, IDisposable
             //  Card clicked
             if (ImGui.ImageButton(deck[i].Texture, new Vector2(130, 182)))
             {
-                if (isTurn)
+                if (plugin.isTurn)
                 {
-                    Services.Chat.Print($"card: {deck[i].GetCardType()}, {deck[i].GetCardColor()}, {deck[i].GetCardNumber()}");
-                    deck.Remove(deck[i]);
                     //  send card when button click
+                    Services.Log.Information($"card: {deck[i].GetCardType()}, {deck[i].GetCardColor()}, {deck[i].GetCardNumber()}");
+                    plugin.SendTurn("Play",deck[i]);
+                    deck.Remove(deck[i]);
+                }
+                else
+                {
+                    Services.Chat.Print("[UNO]: Please wait your turn...");
                 }
             }
             
@@ -235,7 +236,7 @@ public unsafe class UnoInterface: Window, IDisposable
                 ImGui.BeginChild("GameView");
                 
                 //  Uno Game is live
-                if (liveGame)
+                if (plugin.liveGame)
                 {
                     //  CONTINUE: Check if this works correctly.
                     ImGui.Dummy(new Vector2(0, ImGui.GetWindowHeight() / 2));
@@ -254,7 +255,7 @@ public unsafe class UnoInterface: Window, IDisposable
                     {
                         if (ImGui.Button("Start Game!"))
                         {
-                            plugin.SendStartGame("start");
+                            plugin.SendStartGame();
                         }
                     }
                     else

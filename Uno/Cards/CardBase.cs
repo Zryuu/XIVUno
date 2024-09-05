@@ -97,8 +97,7 @@ public abstract class CardBase()
     public void RandomizeCardElements(CardType type)
     {
         var random = new Random();
-        
-       
+
         //  Number
         if (type == CardType.Number)
         {

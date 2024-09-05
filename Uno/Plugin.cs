@@ -32,6 +32,7 @@ public enum MessageTypeSend
     GameSettings,
     UpdateHost,
     KickPlayer,
+    Turn
 }
 
 //  CommandBytes received from Server
@@ -49,10 +50,11 @@ public enum MessageTypeReceive
     GameSettings,
     UpdateHost,
     KickPlayer,
+    Turn,
     Error = 99
 }
 
-//  Uno Settings Stuct
+//  Uno Settings Struct
 public struct UnoSettings
 {
     public int StartingHand;
@@ -97,7 +99,8 @@ public class Plugin : IDalamudPlugin
     
     //  Uno Vars
     public UnoSettings UnoSettings;
-    private bool BInUnoGame { get; set; }
+    public bool isTurn { get; set; }
+    public bool liveGame { get; set; }
     public bool Host;
     public CardBase currentPlayedCard = new CardBack();
     public List<CardBase> locPlayerCards;
@@ -322,11 +325,15 @@ public class Plugin : IDalamudPlugin
                 case MessageTypeReceive.KickPlayer:
                     ReceiveKickPlayer(commandArgument);
                     break;
+                //  Turn = 12
+                case MessageTypeReceive.Turn:
+                    break;
                 
                 //  Error = 99
                 case MessageTypeReceive.Error:
                     HandleErrorMsg(commandArgument);
                     break;
+
                 default:
                     Services.Log.Information("Invalid Response received.");
                     break;
@@ -390,7 +397,7 @@ public class Plugin : IDalamudPlugin
             return;
         }
 
-        SendMsg(ResponseType(MessageTypeSend.Ping, XivName));
+        SendMsg(ResponseType(MessageTypeSend.Ping, XivName!));
         LastPingSent = 0;
 
         if (Ping) { Ping = false; }
@@ -464,7 +471,7 @@ public class Plugin : IDalamudPlugin
     public void SendLogout()
     {
         Services.Chat.Print($"[UNO]: Disconnecting from server...");
-        SendMsg(ResponseType(MessageTypeSend.Logout, $""));
+        SendMsg(ResponseType(MessageTypeSend.Logout, $"logout"));
     }
     
     //  Server removed client.
@@ -473,29 +480,119 @@ public class Plugin : IDalamudPlugin
         ConnectedToServer = false;
         Services.Chat.Print($"[UNO]: {command}");
     }
-    public void SendStartGame(string command)
+    public void SendStartGame()
     {
-        
+        Services.Chat.Print($"[UNO]: Attempting to Start game...");
+        SendMsg(ResponseType(MessageTypeSend.StartGame, $"start"));
     }
     
     public void ReceiveStartGame(string command)
     {
+     
+        //  parse command
+        var parts = command.Split(";");
+        var type = parts[0];
+        var color = parts[1];
+        if (color == "null")
+        {
+            color = null;
+        }
+        var number = parts[2];
+        if (number == "null")
+        {
+            number = null;
+        }
+        
+        //  Set starting card.
+        currentPlayedCard.SetCardElements((CardColor)int.Parse(color!), (CardType)int.Parse(type), int.Parse(number!));
+        
         //  Init Loc player cards.
         InitCards();
         
-        //  Parse command for starting card.
+        //  starting player name
+        var name = parts[3];
+        isTurn = XivName == name;
         
-        //  Parse command for starting player name
+        liveGame = true;
         
+        Services.Chat.Print($"[UNO]: GAME IS LIVE!");
     }
     
-    public void SendEndGame(string command)
+    public void SendEndGame()
     {
-        
+        Services.Chat.Print($"[UNO]: Attempting to end game...");
+        SendMsg(ResponseType(MessageTypeSend.EndGame, $"end"));
     }
     
     public void ReceiveEndGame(string command)
     {
+        var parts = command.Split(";");
+        var forced = bool.Parse(parts[0]);
+        var winner = parts[1];
+
+        isTurn = false;
+        liveGame = false;
+        locPlayerCards.Clear();
+        
+        if (!forced)
+        {
+            Services.Chat.Print($"[UNO]: Game ended. Winner: {winner}");
+            return;
+        }
+        
+        Services.Chat.Print("[UNO]: Host ended Game.");
+    }
+
+    public void SendTurn(string turnType, CardBase card)
+    {
+        
+        Services.Log.Information($"[UNO]: Turn sent to server.");
+        SendMsg(ResponseType(MessageTypeSend.Turn, $"{turnType};{card.GetCardType()};{card.GetCardColor()};{card.GetCardNumber()}"));
+    }
+
+    public void ReceiveTurn(string command)
+    {
+        var parts = command.Split(";");
+        var turnType = parts[0];
+        var type = (CardType)int.Parse(parts[1]);
+        var color = (CardColor)int.Parse(parts[2]);
+        var number = int.Parse(parts[3]);
+        var name = parts[4];
+        
+        currentPlayedCard.SetCardElements(color, type, number);
+
+        isTurn = name == XivName;
+
+        if ((isTurn && type == CardType.Block) || type == CardType.Swap)
+        {
+            isTurn = false;
+            //  PLay blocked anim or something....idk but something the player knows they got blocked/swapped.
+        }
+
+        //  Update held cards for other players.
+        switch (turnType)
+        {
+            case "Draw":
+                for (var i = 0; i < CurrentPlayersInRoom.Count; i++)
+                {
+                    if (name == CurrentPlayersInRoom[i])
+                    {
+                        RemotePlayersHeldCards[i]++;
+                    }
+                }
+                break;
+            case "Play":
+                for (var i = 0; i < CurrentPlayersInRoom.Count; i++)
+                {
+                    if (name == CurrentPlayersInRoom[i])
+                    {
+                        RemotePlayersHeldCards[i]--;
+                    }
+                }
+                break;
+        }
+        
+        //  Func to point or highlight the player whose turn it is.
         
     }
     
