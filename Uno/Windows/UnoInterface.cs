@@ -238,6 +238,9 @@ public unsafe class UnoInterface: Window, IDisposable
                     //  Uno Game is live
                     if (plugin.liveGame)
                     {
+                        ImGui.Text($"RoomID: {plugin.CurrentRoomId}");
+                        ImGui.SameLine();
+                        
                         //  End Game 
                         if (plugin.Host)
                         {
@@ -256,7 +259,6 @@ public unsafe class UnoInterface: Window, IDisposable
                     }
                     else //  Uno Game isn't live
                     {
-                        //ImGui.Dummy(new Vector2(0, ImGui.GetWindowHeight() / 2));
                         ImGui.Indent(578);
 
                         if (plugin.Host)
