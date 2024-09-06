@@ -939,6 +939,12 @@ public class Plugin : IDalamudPlugin
     public bool CheckIfCardMatches(CardBase card)
     {
         var currentCard = UnoInterface.CurrentPlayedCard;
+
+        //  If its first move
+        if (currentCard == new CardBack())
+        {
+            return true;
+        }
         
         //  If currentCard = wild, ture
         if (currentCard.GetCardType() == CardType.WildCard)

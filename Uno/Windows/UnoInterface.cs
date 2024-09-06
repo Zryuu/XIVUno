@@ -130,14 +130,14 @@ public unsafe class UnoInterface: Window, IDisposable
                         Services.Chat.Print("[UNO]: Please wait your turn...");
                         return;
                     }
-
+                    
                     if (plugin.CheckIfCardMatches(deck[i]))
                     {
                         plugin.SendTurn("Play", deck[i]);
                     }
                     else
                     {
-                        Services.Chat.Print("[UNO]: Card can't be played (Nothing matches last played card).");
+                        Services.Chat.Print("[UNO]: Card can't be played (Card doesn't have any similarities to last played card).");
                     }
                 }
             }
