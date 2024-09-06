@@ -14,6 +14,9 @@ public class CardWild: CardBase
         CardInfo.CardType = CardType.WildCard;
         CardInfo.CardColor = null;
         CardInfo.Number = null;
-        Texture = Services.TextureProvider.GetFromFile(Dir += "wild.png").GetWrapOrEmpty().ImGuiHandle;
+        Services.Framework.RunOnFrameworkThread(() =>
+        {
+            Texture = Services.TextureProvider.GetFromFile(Dir += "wild.png").GetWrapOrEmpty().ImGuiHandle;
+        });
     }
 }

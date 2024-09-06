@@ -11,10 +11,11 @@ public class CardBlock: CardBase
     public CardBlock()
     {
         CardInfo.CardType = CardType.Block;
-        Texture = Services.TextureProvider.GetFromFile("Uno/Cards/Data/back.png").GetWrapOrEmpty().ImGuiHandle;
-        
         RandomizeCardElements(CardInfo.CardType);
-        Texture = SetCardTex();
+        Services.Framework.RunOnFrameworkThread(() =>
+        {
+            Texture = SetCardTex();
+        });
     }
     
     public IntPtr SetCardTex()

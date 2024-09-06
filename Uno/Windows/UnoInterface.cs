@@ -98,7 +98,7 @@ public unsafe class UnoInterface: Window, IDisposable
         for (var i = 0; i < deck.Count; i++)
         {
             //  This may mess up player name tooltips.
-            ImGui.SetCursorPos(new Vector2(ImGui.GetWindowWidth() / 4, DeckPosY));
+            //ImGui.SetCursorPos(new Vector2(ImGui.GetWindowWidth() / 4, DeckPosY));
             ImGui.PushID("card###");
             
             //  Card clicked
@@ -233,52 +233,53 @@ public unsafe class UnoInterface: Window, IDisposable
             //  Connected to Room
             if (plugin.CurrentRoomId != null)
             {
-                ImGui.BeginChild("GameView");
-                
-                //  Uno Game is live
-                if (plugin.liveGame)
+                using (ImRaii.Group())
                 {
-                    //  End Game 
-                    if (plugin.Host)
+                    //  Uno Game is live
+                    if (plugin.liveGame)
                     {
-                        if (ImGui.Button("End Game"))
+                        //  End Game 
+                        if (plugin.Host)
                         {
-                            plugin.SendEndGame();
+                            if (ImGui.Button("End Game"))
+                            {
+                                plugin.SendEndGame();
+                            }
+                        }
+                    
+                        //  CONTINUE: Check if this works correctly.
+                        ImGui.Dummy(new Vector2(0, ImGui.GetWindowHeight() / 2));
+                        ImGui.Indent(578);
+                        DrawCurrentPlayedCard(plugin.currentPlayedCard);
+                        DrawCurrentDeck(plugin.locPlayerCards);
+
+                    }
+                    else //  Uno Game isn't live
+                    {
+                        //ImGui.Dummy(new Vector2(0, ImGui.GetWindowHeight() / 2));
+                        ImGui.Indent(578);
+
+                        if (plugin.Host)
+                        {
+                            if (ImGui.Button("Start Game!"))
+                            {
+                                plugin.SendStartGame();
+                            }
+                        }
+                        else
+                        {
+                            ImGui.Text("Waiting for Host to Start Game!");
+                        }
+                        ImGui.Unindent(578);
+                        ImGui.SameLine();
+                        using (ImRaii.Group())
+                        {
+                            ImGui.Indent(500);
+                            DrawRoomTabs();
                         }
                     }
                     
-                    //  CONTINUE: Check if this works correctly.
-                    ImGui.Dummy(new Vector2(0, ImGui.GetWindowHeight() / 2));
-                    ImGui.Indent(578);
-                    DrawCurrentPlayedCard(plugin.currentPlayedCard);
-                    DrawCurrentDeck(plugin.locPlayerCards);
-
                 }
-                else //  Uno Game isn't live
-                {
-                    ImGui.Dummy(new Vector2(0, ImGui.GetWindowHeight() / 2));
-                    ImGui.Indent(578);
-                    DrawCurrentPlayedCard(plugin.currentPlayedCard);
-
-                    if (plugin.Host)
-                    {
-                        if (ImGui.Button("Start Game!"))
-                        {
-                            plugin.SendStartGame();
-                        }
-                    }
-                    else
-                    {
-                        ImGui.Text("Waiting for Host to Start Game!");
-                    }
-                }
-                ImGui.Unindent(578);
-                ImGui.EndChild();
-
-                ImGui.BeginChild("GameTabs");
-                ImGui.Indent(1156);
-                DrawRoomTabs();
-                ImGui.EndChild();
             }
             //  Not Connected to Server
             else

@@ -12,10 +12,12 @@ public class CardNumber: CardBase
     public CardNumber()
     {
         CardInfo.CardType = CardType.Number;
-        Texture = Services.TextureProvider.GetFromFile("Uno/Cards/Data/back.png").GetWrapOrEmpty().ImGuiHandle;
         
         RandomizeCardElements(CardInfo.CardType);
-        SetCardTex();
+        Services.Framework.RunOnFrameworkThread(() =>
+        {
+            Texture = SetCardTex();
+        });
     }
     
     public IntPtr SetCardTex()

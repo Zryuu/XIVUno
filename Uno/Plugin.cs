@@ -102,7 +102,7 @@ public class Plugin : IDalamudPlugin
     public bool isTurn { get; set; }
     public bool liveGame { get; set; }
     public bool Host;
-    public CardBase currentPlayedCard = new CardBack();
+    public CardBase currentPlayedCard;
     public List<CardBase> locPlayerCards;
     public int[] RemotePlayersHeldCards;
     
@@ -145,6 +145,7 @@ public class Plugin : IDalamudPlugin
         Services.PluginInterface.UiBuilder.OpenMainUi += ToggleMainUi;
 
         UnoSettings = new UnoSettings();
+        currentPlayedCard = new CardBack();
         
         SaveLocPlayer();
     }

@@ -35,7 +35,7 @@ public enum CardType
 
 public abstract class CardBase()
 {
-    protected CardInfo CardInfo;
+    protected CardInfo CardInfo = new CardInfo();
     public bool Zero, Special, Action, Wild;
     public IntPtr Texture;
     
@@ -61,7 +61,7 @@ public abstract class CardBase()
     {
         CardInfo.CardColor = color;
     }
-    
+
     public CardType GetCardType()
     {
         return CardInfo.CardType;

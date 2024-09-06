@@ -6,14 +6,21 @@ namespace Uno.Cards;
 
 public class CardBack: CardBase
 {
-    public string Dir = "Data/back.png";
+    public const string Dir = "Data/back.png";
     public IntPtr Texture;
     
     public CardBack()
     {
-        CardInfo.CardType = CardType.Number;
-        CardInfo.CardColor = null;
-        CardInfo.Number = null;
-        Texture = Services.TextureProvider.GetFromFile(Dir).GetWrapOrEmpty().ImGuiHandle;
+        CardInfo = new CardInfo
+        {
+            CardType = CardType.Number,
+            CardColor = null,
+            Number = null
+        };
+        
+        Services.Framework.RunOnFrameworkThread(() =>
+        {
+            Texture = Services.TextureProvider.GetFromFile(Dir).GetWrapOrEmpty().ImGuiHandle;
+        });
     }
 }

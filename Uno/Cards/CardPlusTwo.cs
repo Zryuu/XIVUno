@@ -12,10 +12,12 @@ public class CardPlusTwo: CardBase
     public CardPlusTwo()
     {
         CardInfo.CardType = CardType.PlusTwo;
-        Texture = Services.TextureProvider.GetFromFile("Uno/Cards/Data/back.png").GetWrapOrEmpty().ImGuiHandle;
         
         RandomizeCardElements(CardInfo.CardType);
-        Texture = SetCardTex();
+        Services.Framework.RunOnFrameworkThread(() =>
+        {
+            Texture = SetCardTex();
+        });
     }
     
     public IntPtr SetCardTex()

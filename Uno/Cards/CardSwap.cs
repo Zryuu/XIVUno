@@ -12,10 +12,12 @@ public class CardSwap: CardBase
     public CardSwap()
     {
         CardInfo.CardType = CardType.Swap;
-        Texture = Services.TextureProvider.GetFromFile("Uno/Cards/Data/back.png").GetWrapOrEmpty().ImGuiHandle;
         
         RandomizeCardElements(CardInfo.CardType);
-        Texture = SetCardTex();
+        Services.Framework.RunOnFrameworkThread(() =>
+        {
+            Texture = SetCardTex();
+        });
     }
     
     public IntPtr SetCardTex()
