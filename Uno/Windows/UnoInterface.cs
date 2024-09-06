@@ -134,6 +134,8 @@ public unsafe class UnoInterface: Window, IDisposable
                     if (plugin.CheckIfCardMatches(deck[i]))
                     {
                         plugin.SendTurn("Play", deck[i]);
+                        deck.Remove(deck[i]);
+
                     }
                     else
                     {

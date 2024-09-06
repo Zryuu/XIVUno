@@ -926,8 +926,7 @@ public class Plugin : IDalamudPlugin
                 return true;
             }
             //  If Card numbers match (and they aren't -1)
-            if (currentCard.GetCardNumber() != -1 &&
-                card.GetCardNumber() == currentCard.GetCardNumber())
+            if (currentCard.GetCardNumber() != -1 && card.GetCardNumber() == currentCard.GetCardNumber())
             {
                 return true;
             }
