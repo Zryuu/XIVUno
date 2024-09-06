@@ -89,7 +89,7 @@ public unsafe class UnoInterface: Window, IDisposable
 
     public void DrawCurrentPlayedCard(CardBase card)
     {
-        ImGui.Image(card.Texture, new Vector2(130, 182));
+        ImGui.Image(card.Texture.ImGuiHandle, new Vector2(130, 182));
     }
 
     public void DrawCurrentDeck(List<CardBase> deck)
@@ -102,7 +102,7 @@ public unsafe class UnoInterface: Window, IDisposable
             ImGui.PushID("card###");
             
             //  Card clicked
-            if (ImGui.ImageButton(deck[i].Texture, new Vector2(130, 182)))
+            if (ImGui.ImageButton(deck[i].Texture.ImGuiHandle, new Vector2(130, 182)))
             {
                 if (plugin.isTurn)
                 {
@@ -238,8 +238,6 @@ public unsafe class UnoInterface: Window, IDisposable
                     //  Uno Game is live
                     if (plugin.liveGame)
                     {
-                        ImGui.Text($"RoomID: {plugin.CurrentRoomId}");
-                        ImGui.SameLine();
                         
                         //  End Game 
                         if (plugin.Host)
@@ -251,9 +249,10 @@ public unsafe class UnoInterface: Window, IDisposable
                         }
                     
                         //  CONTINUE: Check if this works correctly.
-                        ImGui.Dummy(new Vector2(0, ImGui.GetWindowHeight() / 2));
-                        ImGui.Indent(578);
+                        //ImGui.Dummy(new Vector2(0, ImGui.GetWindowHeight() / 2));
+                        //ImGui.Indent(578);
                         DrawCurrentPlayedCard(plugin.currentPlayedCard);
+                        
                         DrawCurrentDeck(plugin.locPlayerCards);
 
                     }

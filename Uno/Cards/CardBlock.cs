@@ -1,4 +1,5 @@
 ﻿using System;
+using Dalamud.Interface.Textures.TextureWraps;
 using Uno.Helpers;
 
 namespace Uno.Cards;
@@ -18,7 +19,7 @@ public class CardBlock: CardBase
         });
     }
     
-    public IntPtr SetCardTex()
+    public IDalamudTextureWrap SetCardTex()
     {
         //  Add Color to Dir
         switch (CardInfo.CardColor)
@@ -42,6 +43,6 @@ public class CardBlock: CardBase
         
         //  Set Texture with new Dir
         Services.Log.Information($"Dir: {Dir}");
-        return Services.TextureProvider.GetFromFile(Dir).GetWrapOrEmpty().ImGuiHandle;
+        return Services.TextureProvider.GetFromFile(Dir).GetWrapOrEmpty();
     }
 }

@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Numerics;
+using System.Reflection;
+using Dalamud.Interface.Textures.TextureWraps;
 using Lumina.Data.Parsing;
 using Uno.Helpers;
 
@@ -37,7 +39,7 @@ public abstract class CardBase()
 {
     protected CardInfo CardInfo = new CardInfo();
     public bool Zero, Special, Action, Wild;
-    public IntPtr Texture;
+    public IDalamudTextureWrap? Texture;
     
     public void SetPossibleCards(bool zero, bool special, bool action, bool wild)
     {
@@ -45,6 +47,13 @@ public abstract class CardBase()
         Special = special;
         Action = action;
         Wild = wild;
+        
+        Services.Framework.RunOnFrameworkThread(() =>
+        {
+            
+            Texture = Services.TextureProvider.GetFromManifestResource(Assembly.GetExecutingAssembly(), "Uno.Cards.Data.back.png").GetWrapOrEmpty();
+            
+        });
     }
 
     public int GetCardColor()

@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Reflection;
+using Dalamud.Interface.Textures.TextureWraps;
 using Uno.Helpers;
 
 namespace Uno.Cards;
@@ -6,8 +8,8 @@ namespace Uno.Cards;
 
 public class CardBack: CardBase
 {
-    public const string Dir = "Data/back.png";
-    public IntPtr Texture;
+    public const string Dir = "Uno.Cards.Data.back.png";
+    public IDalamudTextureWrap? Texture;
     
     public CardBack()
     {
@@ -20,7 +22,18 @@ public class CardBack: CardBase
         
         Services.Framework.RunOnFrameworkThread(() =>
         {
-            Texture = Services.TextureProvider.GetFromFile(Dir).GetWrapOrEmpty().ImGuiHandle;
+            
+            foreach (var resourceName in Assembly.GetExecutingAssembly().GetManifestResourceNames())
+            {
+                Services.Log.Information($"Resource: {resourceName}");
+            }
+            
+            Texture = Services.TextureProvider.GetFromManifestResource(Assembly.GetExecutingAssembly(), Dir).GetWrapOrEmpty();
+
+            if (Texture == null)
+            {
+                Services.Log.Information("No texture found.");
+            }
         });
     }
 }
