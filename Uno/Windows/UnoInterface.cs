@@ -28,9 +28,7 @@ public unsafe class UnoInterface: Window, IDisposable
     //  UI settings
     public int TypedRoomId; //  This is the RoomID the player types. not the actual ID of the room the player is in.
     public float DeckPosY = 600f;
-    public int HoverAmount = 10;
-    public float HoverLerpSpeed = 0.1f; //  This amount is applied to the Lerp every frame (0 -> 1)
-    public bool CardWasHovered;
+
     
     public Assembly ass = Assembly.GetExecutingAssembly();  //  This should prob be moved to the Ctor
     
@@ -107,12 +105,11 @@ public unsafe class UnoInterface: Window, IDisposable
     public void DrawCurrentDeck(List<CardBase> deck)
     {
         ImGui.SetCursorPos(new Vector2(ImGui.GetWindowWidth() / 4, DeckPosY));
-        var hovered = ImGui.IsItemHovered();
         
         for (var i = 0; i < deck.Count; i++)
         {
             
-            ImGui.PushID("card###");
+            ImGui.PushID($"card###{i}");
             
             //  Setting Card Texture
             var texture = Services.TextureProvider.GetFromManifestResource(ass, deck[i].Dir).GetWrapOrDefault();
@@ -120,49 +117,63 @@ public unsafe class UnoInterface: Window, IDisposable
             if (texture != null)
             {
                 deck[i].SetCardTexture(texture);
+                var hoveredY = HoverLerp(DeckPosY, DeckPosY - deck[i].HoverAmount, deck[i].HoverLerpAlpha);
+                deck[i].Y = hoveredY;
+                
+                ImGui.SetCursorPosY(deck[i].Y);
             
                 //  Card clicked
                 if (ImGui.ImageButton(deck[i].Texture!.ImGuiHandle, new Vector2(80, 140)))
                 {
-                    if (plugin.isTurn)
+                    if (!plugin.isTurn)
                     {
-                        //  send card when button click
-                        Services.Log.Information($"card: {deck[i].GetCardType()}, {deck[i].GetCardColor()}, {deck[i].GetCardNumber()}");
-                        plugin.SendTurn("Play",deck[i]);
-                        deck.Remove(deck[i]);
+                        Services.Chat.Print("[UNO]: Please wait your turn...");
+                        return;
+                    }
+
+                    if (plugin.CheckIfCardMatches(deck[i]))
+                    {
+                        plugin.SendTurn("Play", deck[i]);
                     }
                     else
                     {
-                        Services.Chat.Print("[UNO]: Please wait your turn...");
+                        Services.Chat.Print("[UNO]: Card can't be played (Nothing matches last played card).");
                     }
                 }
             }
-            ImGui.SameLine();
             
             //  Card is hovered
             if (ImGui.IsItemHovered())
             {
-                CardWasHovered = true;
-                DeckPosY = HoverLerp(DeckPosY, 600 - HoverAmount, HoverLerpSpeed);
+                deck[i].CardWasHovered = true;
+                deck[i].Y = HoverLerp(deck[i].Y, DeckPosY - deck[i].HoverAmount, deck[i].HoverLerpAlpha);
+                deck[i].HoverLerpAlpha += deck[i].HoverLerpSpeed;
+                deck[i].HoverLerpAlpha = Math.Clamp(deck[i].HoverLerpAlpha, 0f, 1f);
+                
                 //  Play hover up anim
             }
 
             //  Card was hovered
-            if (CardWasHovered && !hovered)
+            if (deck[i].CardWasHovered && !ImGui.IsItemHovered())
             {
-                DeckPosY = HoverLerp(DeckPosY, 600 - HoverAmount, HoverLerpSpeed, true);
+                deck[i].Y = HoverLerp(deck[i].Y, DeckPosY - deck[i].HoverAmount, deck[i].HoverLerpAlpha, true);
+                deck[i].HoverLerpAlpha -= deck[i].HoverLerpSpeed;
+                deck[i].HoverLerpAlpha = Math.Clamp(deck[i].HoverLerpAlpha, 0f, 1f);
 
-                if (Math.Abs(DeckPosY - 600f) < 0.01)
+                if (Math.Abs(deck[i].Y - DeckPosY) < 0.001)
                 {
-                    CardWasHovered = false;
+                    deck[i].CardWasHovered = false;
+                    deck[i].HoverLerpAlpha = 0;
                 }
             }
             
+            ImGui.PopID();
+            
+            ImGui.SameLine();
             ImGui.Dummy(new Vector2(10, 0));
             ImGui.SameLine();
         }
     }
-    
     
     public void DrawRemotePlayersCards()
     {

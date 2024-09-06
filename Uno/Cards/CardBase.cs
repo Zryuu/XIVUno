@@ -41,6 +41,11 @@ public abstract class CardBase()
     public bool Zero, Special, Action, Wild;
     public IDalamudTextureWrap? Texture;
     public string Dir = "Uno.Cards.Data.back.png";
+    public float Y = 600f;
+    public int HoverAmount = 50;
+    public float HoverLerpSpeed = 0.1f; //  This amount is applied to the Lerp every frame (0 -> 1)
+    public float HoverLerpAlpha = 0f;
+    public bool CardWasHovered = false;
     
     public void SetPossibleCards(bool zero, bool special, bool action, bool wild)
     {

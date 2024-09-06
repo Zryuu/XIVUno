@@ -617,12 +617,19 @@ public class Plugin : IDalamudPlugin
                 //  PLay blocked anim or something....idk but something the player knows they got blocked.
                 SendTurn("Play", UnoInterface.CurrentPlayedCard);
             }
+
+            if (!CheckIfMatchingCard(LocPlayerCards))
+            {
+                SendTurn("Draw", UnoInterface.CurrentPlayedCard);
+            }
+            
             Services.Chat.Print("[UNO]: It's your turn!");
         }
         else
         {
             Services.Chat.Print($"[UNO]: It's {name}'s turn!");
         }
+        
         
         //  Func to point or highlight the player whose turn it is.
         
@@ -901,7 +908,64 @@ public class Plugin : IDalamudPlugin
     {
         UnoInterface.CurrentPlayedCard = newCard;
     }
-    
+
+    public bool CheckIfMatchingCard(List<CardBase> cards)
+    {
+        var currentCard = UnoInterface.CurrentPlayedCard;
+        foreach (var card in cards)
+        {
+                    
+            //  If picked card is a wild card.
+            if (card.GetCardType() == CardType.WildCard)
+            {
+                return true;
+            }
+            //  If Card colors match
+            if (card.GetCardColor() == currentCard.GetCardColor())
+            {
+                return true;
+            }
+            //  If Card numbers match (and they aren't -1)
+            if (currentCard.GetCardNumber() != -1 &&
+                card.GetCardNumber() == currentCard.GetCardNumber())
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    public bool CheckIfCardMatches(CardBase card)
+    {
+        var currentCard = UnoInterface.CurrentPlayedCard;
+        
+        //  If currentCard = wild, ture
+        if (currentCard.GetCardType() == CardType.WildCard)
+        {
+            return true;
+        }
+        
+        //  If card = wild, ture;
+        if (card.GetCardType() == CardType.WildCard)
+        {
+            return true;
+        }
+        
+        //  If colors match, true
+        if (card.GetCardColor() == currentCard.GetCardColor())
+        {
+            return true;
+        }
+        
+        //  If Card numbers match (and they aren't -1), true
+        if (currentCard.GetCardNumber() != -1 && card.GetCardNumber() == currentCard.GetCardNumber())
+        {
+            return true;
+        }
+        
+        return false;
+    }
     
     private void DrawUi() => WindowSystem.Draw();
     public void ToggleConfigUi() => ConfigWindow.Toggle();
