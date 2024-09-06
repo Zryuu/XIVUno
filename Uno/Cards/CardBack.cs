@@ -8,7 +8,7 @@ namespace Uno.Cards;
 
 public class CardBack: CardBase
 {
-    public const string Dir = "Uno.Cards.Data.back.png";
+    public const string Dir = "Cards/Data/back.png";
     public IDalamudTextureWrap? Texture;
     
     public CardBack()
@@ -27,8 +27,8 @@ public class CardBack: CardBase
             {
                 Services.Log.Information($"Resource: {resourceName}");
             }
-            
-            Texture = Services.TextureProvider.GetFromManifestResource(Assembly.GetExecutingAssembly(), Dir).GetWrapOrEmpty();
+            //  CONTINUE: Textures won't load
+            Texture = Services.TextureProvider.GetFromFile(Services.PluginInterface.GetPluginLocDirectory() + Dir).GetWrapOrEmpty();
 
             if (Texture == null)
             {
