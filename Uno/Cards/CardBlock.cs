@@ -7,42 +7,38 @@ namespace Uno.Cards;
 
 public class CardBlock: CardBase
 {
-    public string Dir = "Data/Special/";
     
     public CardBlock()
     {
         CardInfo.CardType = CardType.Block;
         RandomizeCardElements(CardInfo.CardType);
-        Services.Framework.RunOnFrameworkThread(() =>
-        {
-            Texture = SetCardTex();
-        });
+        Dir = SetCardTex();
     }
     
-    public IDalamudTextureWrap SetCardTex()
+    public string SetCardTex()
     {
+        var newDir = "Uno.Cards.Data.Action.";
+        
         //  Add Color to Dir
         switch (CardInfo.CardColor)
         {
             case CardColor.Blue:
-                Dir += "blue";
+                newDir += "blue";
                 break;
             case CardColor.Red:
-                Dir += "red";
+                newDir += "red";
                 break;
             case CardColor.Yellow:
-                Dir += "yellow";
+                newDir += "yellow";
                 break;
             case CardColor.Green:
-                Dir += "green";
+                newDir += "green";
                 break;
         }
         
         //  Add skip to Dir
-        Dir += "skip";
+        newDir += "skip.png";
         
-        //  Set Texture with new Dir
-        Services.Log.Information($"Dir: {Dir}");
-        return Services.TextureProvider.GetFromFile(Dir).GetWrapOrEmpty();
+        return newDir;
     }
 }

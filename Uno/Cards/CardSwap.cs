@@ -6,44 +6,39 @@ namespace Uno.Cards;
 
 public class CardSwap: CardBase
 {
-    public string Dir = "Data/Action/";
-    public IntPtr Texture;
     
     public CardSwap()
     {
         CardInfo.CardType = CardType.Swap;
         
         RandomizeCardElements(CardInfo.CardType);
-        Services.Framework.RunOnFrameworkThread(() =>
-        {
-            Texture = SetCardTex();
-        });
+        Dir = SetCardTex();
     }
     
-    public IntPtr SetCardTex()
+    public string SetCardTex()
     {
+        var newDir = "Uno.Cards.Data.Action.";
+        
         //  Add Color to Dir
         switch (CardInfo.CardColor)
         {
             case CardColor.Blue:
-                Dir += "blue";
+                newDir += "blue";
                 break;
             case CardColor.Red:
-                Dir += "red";
+                newDir += "red";
                 break;
             case CardColor.Yellow:
-                Dir += "yellow";
+                newDir += "yellow";
                 break;
             case CardColor.Green:
-                Dir += "green";
+                newDir += "green";
                 break;
         }
         
         //  Add reverse to Dir
-        Dir += "reverse";
-        
-        //  Set Texture with new Dir
-        Services.Log.Information($"Dir: {Dir}");
-        return Services.TextureProvider.GetFromFile(Dir).GetWrapOrEmpty().ImGuiHandle;
+        newDir += "reverse.png";
+
+        return newDir;
     }
 }

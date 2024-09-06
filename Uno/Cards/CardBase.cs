@@ -40,6 +40,7 @@ public abstract class CardBase()
     protected CardInfo CardInfo = new CardInfo();
     public bool Zero, Special, Action, Wild;
     public IDalamudTextureWrap? Texture;
+    public string Dir = "Uno.Cards.Data.back.png";
     
     public void SetPossibleCards(bool zero, bool special, bool action, bool wild)
     {
@@ -48,12 +49,6 @@ public abstract class CardBase()
         Action = action;
         Wild = wild;
         
-        Services.Framework.RunOnFrameworkThread(() =>
-        {
-            
-            Texture = Services.TextureProvider.GetFromManifestResource(Assembly.GetExecutingAssembly(), "Uno.Cards.Data.back.png").GetWrapOrEmpty();
-            
-        });
     }
 
     public int GetCardColor()
@@ -113,6 +108,16 @@ public abstract class CardBase()
         SetCardNumber(n);
     }
 
+    public void SetCardTexture(IDalamudTextureWrap? texture)
+    {
+        Texture = texture;
+    }
+
+    public IDalamudTextureWrap GetTex()
+    {
+        return Texture;
+    }
+    
     public void RandomizeCardElements(CardType type)
     {
         var random = new Random();

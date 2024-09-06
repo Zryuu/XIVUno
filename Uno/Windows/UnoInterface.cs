@@ -1,11 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net.Sockets;
 using System.Numerics;
+using System.Reflection;
 using System.Security.Cryptography;
 using System.Text;
 using Dalamud.Game.Text.SeStringHandling;
+using Dalamud.Interface.Textures;
 using Dalamud.Interface.Windowing;
 using ImGuiNET;
 using Uno.Helpers;
@@ -24,11 +27,14 @@ public unsafe class UnoInterface: Window, IDisposable
     
     //  UI settings
     public int TypedRoomId; //  This is the RoomID the player types. not the actual ID of the room the player is in.
-    public float DeckPosY = 730f;
+    public float DeckPosY = 600f;
     public int HoverAmount = 10;
     public float HoverLerpSpeed = 0.1f; //  This amount is applied to the Lerp every frame (0 -> 1)
-    public bool CardWasHovered = false;
+    public bool CardWasHovered;
     
+    public Assembly ass = Assembly.GetExecutingAssembly();  //  This should prob be moved to the Ctor
+    
+    public CardBase CurrentPlayedCard = new CardBack();
 
     
     //  Room Settings
@@ -89,54 +95,71 @@ public unsafe class UnoInterface: Window, IDisposable
 
     public void DrawCurrentPlayedCard(CardBase card)
     {
-        ImGui.Image(card.Texture.ImGuiHandle, new Vector2(130, 182));
+        var texture = Services.TextureProvider.GetFromManifestResource(ass, card.Dir).GetWrapOrDefault();
+
+        if (texture != null)
+        {
+            card.SetCardTexture(texture);
+            ImGui.Image(card.Texture!.ImGuiHandle, new Vector2(130, 182));
+        }
     }
 
     public void DrawCurrentDeck(List<CardBase> deck)
     {
+        ImGui.SetCursorPos(new Vector2(ImGui.GetWindowWidth() / 4, DeckPosY));
         var hovered = ImGui.IsItemHovered();
+        
         for (var i = 0; i < deck.Count; i++)
         {
-            //  This may mess up player name tooltips.
-            //ImGui.SetCursorPos(new Vector2(ImGui.GetWindowWidth() / 4, DeckPosY));
+            
             ImGui.PushID("card###");
             
-            //  Card clicked
-            if (ImGui.ImageButton(deck[i].Texture.ImGuiHandle, new Vector2(130, 182)))
+            //  Setting Card Texture
+            var texture = Services.TextureProvider.GetFromManifestResource(ass, deck[i].Dir).GetWrapOrDefault();
+
+            if (texture != null)
             {
-                if (plugin.isTurn)
+                deck[i].SetCardTexture(texture);
+            
+                //  Card clicked
+                if (ImGui.ImageButton(deck[i].Texture!.ImGuiHandle, new Vector2(80, 140)))
                 {
-                    //  send card when button click
-                    Services.Log.Information($"card: {deck[i].GetCardType()}, {deck[i].GetCardColor()}, {deck[i].GetCardNumber()}");
-                    plugin.SendTurn("Play",deck[i]);
-                    deck.Remove(deck[i]);
-                }
-                else
-                {
-                    Services.Chat.Print("[UNO]: Please wait your turn...");
+                    if (plugin.isTurn)
+                    {
+                        //  send card when button click
+                        Services.Log.Information($"card: {deck[i].GetCardType()}, {deck[i].GetCardColor()}, {deck[i].GetCardNumber()}");
+                        plugin.SendTurn("Play",deck[i]);
+                        deck.Remove(deck[i]);
+                    }
+                    else
+                    {
+                        Services.Chat.Print("[UNO]: Please wait your turn...");
+                    }
                 }
             }
+            ImGui.SameLine();
             
             //  Card is hovered
             if (ImGui.IsItemHovered())
             {
                 CardWasHovered = true;
-                DeckPosY = HoverLerp(DeckPosY, 730 - HoverAmount, HoverLerpSpeed);
+                DeckPosY = HoverLerp(DeckPosY, 600 - HoverAmount, HoverLerpSpeed);
                 //  Play hover up anim
             }
 
             //  Card was hovered
             if (CardWasHovered && !hovered)
             {
-                DeckPosY = HoverLerp(DeckPosY, 730 - HoverAmount, HoverLerpSpeed, true);
+                DeckPosY = HoverLerp(DeckPosY, 600 - HoverAmount, HoverLerpSpeed, true);
 
-                if (Math.Abs(DeckPosY - 730f) < 0.01)
+                if (Math.Abs(DeckPosY - 600f) < 0.01)
                 {
                     CardWasHovered = false;
                 }
             }
             
             ImGui.Dummy(new Vector2(10, 0));
+            ImGui.SameLine();
         }
     }
     
@@ -247,13 +270,13 @@ public unsafe class UnoInterface: Window, IDisposable
                                 plugin.SendEndGame();
                             }
                         }
-                    
-                        //  CONTINUE: Check if this works correctly.
-                        //ImGui.Dummy(new Vector2(0, ImGui.GetWindowHeight() / 2));
-                        //ImGui.Indent(578);
-                        DrawCurrentPlayedCard(plugin.currentPlayedCard);
                         
-                        DrawCurrentDeck(plugin.locPlayerCards);
+                        //  CONTINUE: Check if this works correctly.
+                        ImGui.Dummy(new Vector2(0, ImGui.GetWindowHeight() / 4));
+                        ImGui.Indent(578);
+                        DrawCurrentPlayedCard(CurrentPlayedCard);
+                        
+                        DrawCurrentDeck(plugin.LocPlayerCards);
 
                     }
                     else //  Uno Game isn't live

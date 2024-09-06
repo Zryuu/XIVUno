@@ -102,8 +102,7 @@ public class Plugin : IDalamudPlugin
     public bool isTurn { get; set; }
     public bool liveGame { get; set; }
     public bool Host;
-    public CardBase currentPlayedCard;
-    public List<CardBase> locPlayerCards;
+    public List<CardBase> LocPlayerCards;
     public int[] RemotePlayersHeldCards;
     
     //  XIV Vars
@@ -145,7 +144,6 @@ public class Plugin : IDalamudPlugin
         Services.PluginInterface.UiBuilder.OpenMainUi += ToggleMainUi;
 
         UnoSettings = new UnoSettings();
-        currentPlayedCard = new CardBack();
         
         SaveLocPlayer();
     }
@@ -490,8 +488,12 @@ public class Plugin : IDalamudPlugin
     
     public void ReceiveStartGame(string command)
     {
+        Services.Log.Information("Received StartGame");
+        
         //  Init Loc player cards.
         InitCards();
+        
+        Services.Log.Information("Inited cards");
         
         //  starting player name
         isTurn = XivName == command;
@@ -515,7 +517,7 @@ public class Plugin : IDalamudPlugin
 
         isTurn = false;
         liveGame = false;
-        locPlayerCards.Clear();
+        LocPlayerCards.Clear();
         
         if (!forced)
         {
@@ -528,12 +530,14 @@ public class Plugin : IDalamudPlugin
 
     public void SendTurn(string turnType, CardBase card)
     {
-        var cardType = card.GetCardType();
+        var cardType = (int)card.GetCardType();
         var cardColor = card.GetCardColor();
         var cardNumber = card.GetCardNumber();
         
         
         Services.Log.Information($"[UNO]: Turn sent to server.");
+        Services.Log.Information(ResponseType(MessageTypeSend.Turn, $"{turnType};{cardType};{cardColor};{cardNumber}"));
+        
         SendMsg(ResponseType(MessageTypeSend.Turn, $"{turnType};{cardType};{cardColor};{cardNumber}"));
     }
 
@@ -574,28 +578,28 @@ public class Plugin : IDalamudPlugin
         switch (type)
         {
             case CardType.Number:
-                currentPlayedCard = new CardNumber();
-                currentPlayedCard.SetCardElements((CardColor)color, type, number);
+                UnoInterface.CurrentPlayedCard = new CardNumber();
+                UnoInterface.CurrentPlayedCard.SetCardElements((CardColor)color, type, number);
                 break;
             case CardType.Swap:
-                currentPlayedCard = new CardSwap();
-                currentPlayedCard.SetCardElements((CardColor)color, type, null);
+                UnoInterface.CurrentPlayedCard = new CardSwap();
+                UnoInterface.CurrentPlayedCard.SetCardElements((CardColor)color, type, null);
                 break;
             case CardType.Block:
-                currentPlayedCard = new CardBlock();
-                currentPlayedCard.SetCardElements((CardColor)color, type, null);
+                UnoInterface.CurrentPlayedCard = new CardBlock();
+                UnoInterface.CurrentPlayedCard.SetCardElements((CardColor)color, type, null);
                 break;
             case CardType.PlusTwo:
-                currentPlayedCard = new CardPlusTwo();
-                currentPlayedCard.SetCardElements((CardColor)color, type, null);
+                UnoInterface.CurrentPlayedCard = new CardPlusTwo();
+                UnoInterface.CurrentPlayedCard.SetCardElements((CardColor)color, type, null);
                 break;
             case CardType.PlusFour:
-                currentPlayedCard = new CardPlusFour();
-                currentPlayedCard.SetCardElements((CardColor)color, type, null);
+                UnoInterface.CurrentPlayedCard = new CardPlusFour();
+                UnoInterface.CurrentPlayedCard.SetCardElements((CardColor)color, type, null);
                 break;
             case CardType.WildCard:
-                currentPlayedCard = new CardWild();
-                currentPlayedCard.SetCardElements(null, type, null);
+                UnoInterface.CurrentPlayedCard = new CardWild();
+                UnoInterface.CurrentPlayedCard.SetCardElements(null, type, null);
                 break;
         }
 
@@ -611,7 +615,7 @@ public class Plugin : IDalamudPlugin
                 isTurn = false;
                 Services.Chat.Print("[UNO]: Your Turn was blocked!");
                 //  PLay blocked anim or something....idk but something the player knows they got blocked.
-                SendTurn("Play", currentPlayedCard);
+                SendTurn("Play", UnoInterface.CurrentPlayedCard);
             }
             Services.Chat.Print("[UNO]: It's your turn!");
         }
@@ -833,53 +837,54 @@ public class Plugin : IDalamudPlugin
     public void InitCards()
     {
         //  Local Player cards.
-        locPlayerCards = new List<CardBase>(UnoSettings.StartingHand);
+        LocPlayerCards = new List<CardBase>(UnoSettings.StartingHand);
         var random = new Random();
-        for (var i = 0; i < locPlayerCards.Count; i++)
+        
+        for (var i = 0; i < UnoSettings.StartingHand; i++)
         {
-            var ran = random.Next(6);
+            var ran = random.Next(1, 6);
             switch (ran)
             {
                 case 1:
                     var number = new CardNumber();
                     number.SetPossibleCards(UnoSettings.IncludeZero, UnoSettings.IncludeSpecialCards, 
                                             UnoSettings.IncludeActionCards, UnoSettings.IncludeWildCards);
-                    locPlayerCards.Add(number);
+                    LocPlayerCards.Add(number);
                     break;
                 
                 case 2: 
                     var block = new CardBlock();
                     block.SetPossibleCards(UnoSettings.IncludeZero, UnoSettings.IncludeSpecialCards, 
                                            UnoSettings.IncludeActionCards, UnoSettings.IncludeWildCards);
-                    locPlayerCards.Add(block);
+                    LocPlayerCards.Add(block);
                     break;
                 
                 case 3: 
                     var swap = new CardSwap();
                     swap.SetPossibleCards(UnoSettings.IncludeZero, UnoSettings.IncludeSpecialCards, 
                                           UnoSettings.IncludeActionCards, UnoSettings.IncludeWildCards);
-                    locPlayerCards.Add(swap);
+                    LocPlayerCards.Add(swap);
                     break;
                 
                 case 4: 
                     var plusFour = new CardPlusFour();
                     plusFour.SetPossibleCards(UnoSettings.IncludeZero, UnoSettings.IncludeSpecialCards, 
                                               UnoSettings.IncludeActionCards, UnoSettings.IncludeWildCards);
-                    locPlayerCards.Add(plusFour);
+                    LocPlayerCards.Add(plusFour);
                     break;
                 
                 case 5: 
                     var plusTwo = new CardPlusTwo();
                     plusTwo.SetPossibleCards(UnoSettings.IncludeZero, UnoSettings.IncludeSpecialCards, 
                                                  UnoSettings.IncludeActionCards, UnoSettings.IncludeWildCards);
-                    locPlayerCards.Add(plusTwo);
+                    LocPlayerCards.Add(plusTwo);
                     break;
                 
                 case 6: 
                     var wild = new CardWild();
                     wild.SetPossibleCards(UnoSettings.IncludeZero, UnoSettings.IncludeSpecialCards, 
                                               UnoSettings.IncludeActionCards, UnoSettings.IncludeWildCards);
-                    locPlayerCards.Add(wild);
+                    LocPlayerCards.Add(wild);
                     break;
             }
         }
@@ -894,7 +899,7 @@ public class Plugin : IDalamudPlugin
 
     public void SetCurrentPlayedCard(CardBase newCard)
     {
-        currentPlayedCard = newCard;
+        UnoInterface.CurrentPlayedCard = newCard;
     }
     
     

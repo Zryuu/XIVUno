@@ -6,44 +6,38 @@ namespace Uno.Cards;
 
 public class CardPlusTwo: CardBase
 {
-    public string Dir = "Data/Special/";
-    public IntPtr Texture;
     
     public CardPlusTwo()
     {
         CardInfo.CardType = CardType.PlusTwo;
         
         RandomizeCardElements(CardInfo.CardType);
-        Services.Framework.RunOnFrameworkThread(() =>
-        {
-            Texture = SetCardTex();
-        });
+        Dir = SetCardTex();
     }
     
-    public IntPtr SetCardTex()
+    public string SetCardTex()
     {
+        var newDir = "Uno.Cards.Data.Special.";
         //  Add Color to Dir
         switch (CardInfo.CardColor)
         {
             case CardColor.Blue:
-                Dir += "blue";
+                newDir += "blue";
                 break;
             case CardColor.Red:
-                Dir += "red";
+                newDir += "red";
                 break;
             case CardColor.Yellow:
-                Dir += "yellow";
+                newDir += "yellow";
                 break;
             case CardColor.Green:
-                Dir += "green";
+                newDir += "green";
                 break;
         }
         
-        //  Add plustwo to Dir
-        Dir += "plustwo";
+        //  Add skip to Dir
+        newDir += "plustwo.png";
         
-        //  Set Texture with new Dir
-        Services.Log.Information($"Dir: {Dir}");
-        return Services.TextureProvider.GetFromFile(Dir).GetWrapOrEmpty().ImGuiHandle;
+        return newDir;
     }
 }
