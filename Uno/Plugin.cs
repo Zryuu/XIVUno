@@ -505,6 +505,8 @@ public class Plugin : IDalamudPlugin
     
     public void SendEndGame()
     {
+        UnoInterface.CurrentPlayedCard = new CardBack();
+        
         Services.Chat.Print($"[UNO]: Attempting to end game...");
         SendMsg(ResponseType(MessageTypeSend.EndGame, $"end"));
     }
@@ -873,8 +875,8 @@ public class Plugin : IDalamudPlugin
                     LocPlayerCards.Add(swap);
                     break;
                 
-                case 4: 
-                    var plusFour = new CardPlusFour();
+                case 4: //  issue with +four, taking card out for now.
+                    var plusFour = new CardNumber();
                     plusFour.SetPossibleCards(UnoSettings.IncludeZero, UnoSettings.IncludeSpecialCards, 
                                               UnoSettings.IncludeActionCards, UnoSettings.IncludeWildCards);
                     LocPlayerCards.Add(plusFour);
@@ -938,9 +940,11 @@ public class Plugin : IDalamudPlugin
     public bool CheckIfCardMatches(CardBase card)
     {
         var currentCard = UnoInterface.CurrentPlayedCard;
+        
+        Services.Log.Information(card.ToString());
 
         //  If its first move
-        if (currentCard == new CardBack())
+        if (currentCard is CardBack)
         {
             return true;
         }

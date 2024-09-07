@@ -12,6 +12,8 @@ public class CardPlusFour: CardBase
         CardInfo.CardType = CardType.PlusFour;
         CardInfo.CardColor = null;
         CardInfo.Number = null;
+        
+        RandomizeCardElements(CardType.PlusFour);
 
         Dir = SetCardTex();
     }
@@ -23,16 +25,18 @@ public class CardPlusFour: CardBase
         switch (CardInfo.CardColor)
         {
             case CardColor.Blue:
-                newDir += "blue";
+                newDir += "Blue";
                 break;
             case CardColor.Red:
-                newDir += "red";
+                newDir += "Red";
                 break;
             case CardColor.Yellow:
-                newDir += "yellow";
+                newDir += "Yellow";
                 break;
             case CardColor.Green:
-                newDir += "green";
+                newDir += "Green";
+                break;
+            default:
                 break;
         }
         

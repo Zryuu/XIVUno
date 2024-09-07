@@ -105,10 +105,11 @@ public unsafe class UnoInterface: Window, IDisposable
     public void DrawCurrentDeck(List<CardBase> deck)
     {
         ImGui.SetCursorPos(new Vector2(ImGui.GetWindowWidth() / 4, DeckPosY));
+
+        CardBase? clickedCard = null;
         
         for (var i = 0; i < deck.Count; i++)
         {
-            
             ImGui.PushID($"card###{i}");
             
             //  Setting Card Texture
@@ -131,56 +132,26 @@ public unsafe class UnoInterface: Window, IDisposable
                 if (!plugin.isTurn)
                 {
                     Services.Chat.Print("[UNO]: Please wait your turn...");
+                    //ImGui.PopID();
                     return;
                 }
 
-                //  Handles if card is a wild card.....can prob be reformatted to be better.
-                if (deck[i].GetCardType() == CardType.WildCard)
+                //  If Card that's clicked is a Wild card or a PlusFour. This if block can prob be reformatted to be better.
+                if (deck[i].GetCardType() == CardType.WildCard || deck[i].GetCardType() == CardType.PlusFour)
                 {
-                    if (ImGui.BeginPopupContextItem($"WildCardColorChange###{i}"))
-                    {
-                        if (ImGui.MenuItem("Blue"))
-                        {
-                            deck[i].WildCardColorChange(CardColor.Blue);
-                            plugin.SendTurn("Play", deck[i]);
-                            deck.Remove(deck[i]);
-                            return;
-                        }
-                        if (ImGui.MenuItem("Red"))
-                        {
-                            deck[i].WildCardColorChange(CardColor.Red);
-                            plugin.SendTurn("Play", deck[i]);
-                            deck.Remove(deck[i]);
-                            return;
-                        }
-                        if (ImGui.MenuItem("Yellow"))
-                        {
-                            deck[i].WildCardColorChange(CardColor.Yellow);
-                            plugin.SendTurn("Play", deck[i]);
-                            deck.Remove(deck[i]);
-                            return;
-                        }
-                        if (ImGui.MenuItem("Green"))
-                        {
-                            deck[i].WildCardColorChange(CardColor.Green);
-                            plugin.SendTurn("Play", deck[i]);
-                            deck.Remove(deck[i]);
-                            return;
-                        }
-                    }
-                    ImGui.EndPopup();
+                    //ImGui.OpenPopup($"WildCardColorChange###{i}");
                 }
                 
                 //  Checks if something Matches the current card
                 if (plugin.CheckIfCardMatches(deck[i]))
                 {
                     plugin.SendTurn("Play", deck[i]);
-                    deck.Remove(deck[i]);
+                    clickedCard = deck[i];
                 }
                 else
                 {
+                    Services.Log.Information(CurrentPlayedCard.ToString());
                     Services.Chat.Print("[UNO]: Card can't be played (Card doesn't have any similarities to last played card).");
-                    
                 }
             }   
             ImGuiUtil.HoverTooltip($"{deck[i].GetCardName()}");
@@ -217,6 +188,51 @@ public unsafe class UnoInterface: Window, IDisposable
             ImGui.Dummy(new Vector2(10, 0));
             ImGui.SameLine();
         }
+
+        if (clickedCard != null)
+        {
+            deck.Remove(clickedCard);
+        }
+        
+        // Wild Card shits
+        /*
+        if (ImGui.IsItemClicked(ImGuiMouseButton.Left) && ImGui.BeginPopupContextItem($"WildCardColorChange###{deck.IndexOf(clickedCard)}"))
+        {
+            if (ImGui.MenuItem("Blue"))
+            {
+                clickedCard.WildCardColorChange(CardColor.Blue);
+                plugin.SendTurn("Play", clickedCard);
+                deck.Remove(clickedCard);
+                ImGui.CloseCurrentPopup();
+                return;
+            }
+            if (ImGui.MenuItem("Red"))
+            {
+                clickedCard.WildCardColorChange(CardColor.Red);
+                plugin.SendTurn("Play", clickedCard);
+                deck.Remove(clickedCard);
+                ImGui.CloseCurrentPopup();
+                return;
+            }
+            if (ImGui.MenuItem("Yellow"))
+            {
+                clickedCard.WildCardColorChange(CardColor.Yellow);
+                plugin.SendTurn("Play", clickedCard);
+                deck.Remove(clickedCard);
+                ImGui.CloseCurrentPopup();
+                return;
+            }
+            if (ImGui.MenuItem("Green"))
+            {
+                clickedCard.WildCardColorChange(CardColor.Green);
+                plugin.SendTurn("Play", clickedCard);
+                deck.Remove(clickedCard);
+                ImGui.CloseCurrentPopup();
+                return;
+            }
+        }
+        ImGui.EndPopup();
+        */
     }
     
     public void DrawRemotePlayersCards()
