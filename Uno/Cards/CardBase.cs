@@ -37,15 +37,16 @@ public enum CardType
 
 public abstract class CardBase()
 {
-    protected CardInfo CardInfo = new CardInfo();
+    protected CardInfo CardInfo;
     public bool Zero, Special, Action, Wild;
     public IDalamudTextureWrap? Texture;
-    public string Dir = "Uno.Cards.Data.back.png";
-    public float Y = 600f;
-    public int HoverAmount = 50;
-    public float HoverLerpSpeed = 0.1f; //  This amount is applied to the Lerp every frame (0 -> 1)
-    public float HoverLerpAlpha = 0f;
-    public bool CardWasHovered = false;
+    
+    public string Dir                   = "Uno.Cards.Data.back.png";
+    public float Y                      = 600f;   //  Y Position of UI.
+    public const int HoverAmount        = 50;     //  Amount to move card when Hovered.
+    public const float HoverLerpSpeed   = 0.1f;   //  This amount is applied to the Lerp's alpha every frame (0 -> 1)
+    public float HoverLerpAlpha         = 0f;     //  Current amount of Lerp.
+    public bool CardWasHovered          = false;  //  Used to reverse the Lerp.  
     
     public void SetPossibleCards(bool zero, bool special, bool action, bool wild)
     {
@@ -53,9 +54,9 @@ public abstract class CardBase()
         Special = special;
         Action = action;
         Wild = wild;
-        
     }
 
+    //  Returns an Int. Used to send info to Server
     public int GetCardColor()
     {
         if (CardInfo.CardColor == null)
@@ -71,6 +72,16 @@ public abstract class CardBase()
         CardInfo.CardColor = color;
     }
 
+    //  Wild Card color change.
+    public void WildCardColorChange(CardColor newColor)
+    {
+        if (CardInfo.CardType != CardType.WildCard)
+        {
+            return;
+        }
+        CardInfo.CardColor = newColor;
+    }
+    
     public CardType GetCardType()
     {
         return CardInfo.CardType;
@@ -81,6 +92,7 @@ public abstract class CardBase()
         CardInfo.CardType = type;
     }
     
+    //  Returns an Int. Used to send info to Server
     public int GetCardNumber()
     {
         if (CardInfo.Number == null)
@@ -103,7 +115,24 @@ public abstract class CardBase()
     
     public void SetCardName()
     {
-        CardInfo.Name = $"{CardInfo.CardColor};{CardInfo.CardType};{CardInfo.Number}";
+        if (CardInfo.CardColor != null)
+        {
+            CardInfo.Name += CardInfo.CardColor + " ";
+        }
+        
+        if (CardInfo.CardType == CardType.WildCard)
+        {
+            CardInfo.Name = "Wild Card ";
+        }
+        else
+        {
+            CardInfo.Name += CardInfo.CardType + " ";
+        }
+
+        if (CardInfo.Number != null)
+        {
+            CardInfo.Name += CardInfo.Number + " ";
+        }
     }
 
     public void SetCardElements(CardColor? color, CardType type, int? n)
@@ -111,6 +140,7 @@ public abstract class CardBase()
         SetCardColor(color);
         SetCardType(type);
         SetCardNumber(n);
+        SetCardName();
     }
 
     public void SetCardTexture(IDalamudTextureWrap? texture)
@@ -118,6 +148,7 @@ public abstract class CardBase()
         Texture = texture;
     }
 
+    //  This prob won't get used
     public IDalamudTextureWrap GetTex()
     {
         return Texture;
@@ -146,6 +177,8 @@ public abstract class CardBase()
         {
             CardInfo.CardColor = (CardColor)random.Next(0, 3);
         }
+
+        SetCardName();
     }
     
 }

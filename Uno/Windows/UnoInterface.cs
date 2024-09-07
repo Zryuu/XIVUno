@@ -114,52 +114,94 @@ public unsafe class UnoInterface: Window, IDisposable
             //  Setting Card Texture
             var texture = Services.TextureProvider.GetFromManifestResource(ass, deck[i].Dir).GetWrapOrDefault();
 
-            if (texture != null)
+            if (texture == null)
             {
-                deck[i].SetCardTexture(texture);
-                var hoveredY = HoverLerp(DeckPosY, DeckPosY - deck[i].HoverAmount, deck[i].HoverLerpAlpha);
-                deck[i].Y = hoveredY;
-                
-                ImGui.SetCursorPosY(deck[i].Y);
-            
-                //  Card clicked
-                if (ImGui.ImageButton(deck[i].Texture!.ImGuiHandle, new Vector2(80, 140)))
-                {
-                    if (!plugin.isTurn)
-                    {
-                        Services.Chat.Print("[UNO]: Please wait your turn...");
-                        return;
-                    }
-                    
-                    if (plugin.CheckIfCardMatches(deck[i]))
-                    {
-                        plugin.SendTurn("Play", deck[i]);
-                        deck.Remove(deck[i]);
-
-                    }
-                    else
-                    {
-                        Services.Chat.Print("[UNO]: Card can't be played (Card doesn't have any similarities to last played card).");
-                    }
-                }
+                return;
             }
+            
+            deck[i].SetCardTexture(texture);
+            var hoveredY = HoverLerp(DeckPosY, DeckPosY - CardBase.HoverAmount, deck[i].HoverLerpAlpha);
+            deck[i].Y = hoveredY;
+                
+            ImGui.SetCursorPosY(deck[i].Y);
+            
+            //  Card clicked
+            if (ImGui.ImageButton(deck[i].Texture!.ImGuiHandle, new Vector2(80, 140)))
+            {
+                if (!plugin.isTurn)
+                {
+                    Services.Chat.Print("[UNO]: Please wait your turn...");
+                    return;
+                }
+
+                //  Handles if card is a wild card.....can prob be reformatted to be better.
+                if (deck[i].GetCardType() == CardType.WildCard)
+                {
+                    if (ImGui.BeginPopupContextItem($"WildCardColorChange###{i}"))
+                    {
+                        if (ImGui.MenuItem("Blue"))
+                        {
+                            deck[i].WildCardColorChange(CardColor.Blue);
+                            plugin.SendTurn("Play", deck[i]);
+                            deck.Remove(deck[i]);
+                            return;
+                        }
+                        if (ImGui.MenuItem("Red"))
+                        {
+                            deck[i].WildCardColorChange(CardColor.Red);
+                            plugin.SendTurn("Play", deck[i]);
+                            deck.Remove(deck[i]);
+                            return;
+                        }
+                        if (ImGui.MenuItem("Yellow"))
+                        {
+                            deck[i].WildCardColorChange(CardColor.Yellow);
+                            plugin.SendTurn("Play", deck[i]);
+                            deck.Remove(deck[i]);
+                            return;
+                        }
+                        if (ImGui.MenuItem("Green"))
+                        {
+                            deck[i].WildCardColorChange(CardColor.Green);
+                            plugin.SendTurn("Play", deck[i]);
+                            deck.Remove(deck[i]);
+                            return;
+                        }
+                    }
+                    ImGui.EndPopup();
+                }
+                
+                //  Checks if something Matches the current card
+                if (plugin.CheckIfCardMatches(deck[i]))
+                {
+                    plugin.SendTurn("Play", deck[i]);
+                    deck.Remove(deck[i]);
+                }
+                else
+                {
+                    Services.Chat.Print("[UNO]: Card can't be played (Card doesn't have any similarities to last played card).");
+                    
+                }
+            }   
+            ImGuiUtil.HoverTooltip($"{deck[i].GetCardName()}");
             
             //  Card is hovered
             if (ImGui.IsItemHovered())
             {
                 deck[i].CardWasHovered = true;
-                deck[i].Y = HoverLerp(deck[i].Y, DeckPosY - deck[i].HoverAmount, deck[i].HoverLerpAlpha);
-                deck[i].HoverLerpAlpha += deck[i].HoverLerpSpeed;
-                deck[i].HoverLerpAlpha = Math.Clamp(deck[i].HoverLerpAlpha, 0f, 1f);
                 
                 //  Play hover up anim
+                deck[i].Y = HoverLerp(deck[i].Y, DeckPosY - CardBase.HoverAmount, deck[i].HoverLerpAlpha);
+                deck[i].HoverLerpAlpha += CardBase.HoverLerpSpeed;
+                deck[i].HoverLerpAlpha = Math.Clamp(deck[i].HoverLerpAlpha, 0f, 1f);
             }
 
             //  Card was hovered
             if (deck[i].CardWasHovered && !ImGui.IsItemHovered())
             {
-                deck[i].Y = HoverLerp(deck[i].Y, DeckPosY - deck[i].HoverAmount, deck[i].HoverLerpAlpha, true);
-                deck[i].HoverLerpAlpha -= deck[i].HoverLerpSpeed;
+                //  Reverse hover up anim
+                deck[i].Y = HoverLerp(deck[i].Y, DeckPosY - CardBase.HoverAmount, deck[i].HoverLerpAlpha, true);
+                deck[i].HoverLerpAlpha -= CardBase.HoverLerpSpeed;
                 deck[i].HoverLerpAlpha = Math.Clamp(deck[i].HoverLerpAlpha, 0f, 1f);
 
                 if (Math.Abs(deck[i].Y - DeckPosY) < 0.001)
@@ -193,7 +235,8 @@ public unsafe class UnoInterface: Window, IDisposable
             }
         }
     }
-
+    
+    //  Lerp used to raise the cards once the User hovers over the card.
     public float HoverLerp(float start, float end, float alpha, bool reverse = false)
     {
         if (reverse)
@@ -205,7 +248,7 @@ public unsafe class UnoInterface: Window, IDisposable
     }
     
     /***************************
-     *          UI             *
+     *        WINDOW UI        *
      ***************************/
     
     //  Draws the Tabs at the top of the Main window.
