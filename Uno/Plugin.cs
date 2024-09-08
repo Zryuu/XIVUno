@@ -99,8 +99,8 @@ public class Plugin : IDalamudPlugin
     
     //  Uno Vars
     public UnoSettings UnoSettings;
-    public bool isTurn { get; set; }
-    public bool liveGame { get; set; }
+    public bool IsTurn { get; set; }
+    public bool LiveGame { get; set; }
     public bool Host;
     public List<CardBase> LocPlayerCards;
     public int[] RemotePlayersHeldCards;
@@ -496,9 +496,9 @@ public class Plugin : IDalamudPlugin
         Services.Log.Information("Inited cards");
         
         //  starting player name
-        isTurn = XivName == command;
+        IsTurn = XivName == command;
         
-        liveGame = true;
+        LiveGame = true;
         
         Services.Chat.Print($"[UNO]: GAME IS LIVE! {command} has first turn!");
     }
@@ -517,17 +517,17 @@ public class Plugin : IDalamudPlugin
         var forced = bool.Parse(parts[0]);
         var winner = parts[1];
 
-        isTurn = false;
-        liveGame = false;
+        IsTurn = false;
+        LiveGame = false;
         LocPlayerCards.Clear();
         
         if (!forced)
         {
-            Services.Chat.Print($"[UNO]: Game ended. Winner: {winner}");
+            Services.Chat.Print($"[UNO]: {winner}");
             return;
         }
         
-        Services.Chat.Print("[UNO]: Host ended Game.");
+        Services.Chat.Print($"[UNO]: {winner}");
     }
 
     public void SendTurn(string turnType, CardBase card)
@@ -605,16 +605,16 @@ public class Plugin : IDalamudPlugin
                 break;
         }
 
-        isTurn = name == XivName;
+        IsTurn = name == XivName;
 
         //  if its client's turn
-        if (isTurn)
+        if (IsTurn)
         {
             
             //  If Client's turn was blocked.
             if (type == CardType.Block)
             {
-                isTurn = false;
+                IsTurn = false;
                 Services.Chat.Print("[UNO]: Your Turn was blocked!");
                 //  PLay blocked anim or something....idk but something the player knows they got blocked.
                 SendTurn("Play", UnoInterface.CurrentPlayedCard);

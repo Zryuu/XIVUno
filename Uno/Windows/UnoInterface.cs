@@ -129,7 +129,7 @@ public unsafe class UnoInterface: Window, IDisposable
             //  Card clicked
             if (ImGui.ImageButton(deck[i].Texture!.ImGuiHandle, new Vector2(80, 140)))
             {
-                if (!plugin.isTurn)
+                if (!plugin.IsTurn)
                 {
                     Services.Chat.Print("[UNO]: Please wait your turn...");
                     //ImGui.PopID();
@@ -331,7 +331,7 @@ public unsafe class UnoInterface: Window, IDisposable
                 using (ImRaii.Group())
                 {
                     //  Uno Game is live
-                    if (plugin.liveGame)
+                    if (plugin.LiveGame)
                     {
                         
                         //  End Game 
@@ -347,7 +347,6 @@ public unsafe class UnoInterface: Window, IDisposable
                         ImGui.Dummy(new Vector2(0, ImGui.GetWindowHeight() / 4));
                         ImGui.Indent(578);
                         DrawCurrentPlayedCard(CurrentPlayedCard);
-                        
                         DrawCurrentDeck(plugin.LocPlayerCards);
 
                     }
